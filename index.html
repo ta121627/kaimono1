@@ -167,6 +167,15 @@ button{cursor:pointer;}
 .hint{font-size:12px;color:#A8949D;line-height:1.6;margin-bottom:16px;padding:0 2px;}
 .save{width:100%;border:none;background:#FF3B81;color:#fff;border-radius:13px;padding:14px;font-size:17px;font-weight:600;}
 .save:active{background:#E62E70;}
+.save.sub{background:transparent;color:#A8949D;font-size:15px;padding:10px;}
+.save.danger{background:#FF3B30;}
+.save.danger:active{background:#D4291F;}
+.steps{list-style:none;counter-reset:s;margin-bottom:14px;}
+.steps li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;font-size:14px;color:#5A4A52;margin-bottom:11px;line-height:1.5;}
+.steps li::before{content:counter(s);flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#FF3B81;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.steps a{color:#FF3B81;font-weight:600;text-decoration:none;}
+.steps code{background:#FFF0F4;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px;word-break:break-all;}
+.cfgtxt{width:100%;height:78px;border:none;background:#FFF0F4;border-radius:12px;padding:12px;font-size:12px;font-family:monospace;resize:none;outline:none;color:#1C1C1E;line-height:1.4;}
 
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important;}
@@ -196,21 +205,11 @@ button{cursor:pointer;}
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
 
 <script>
-/* ====================================================================
-   ▼ クラウド同期の設定 ▼
-   Firebaseコンソールでコピーした firebaseConfig を下に貼り付けてください。
-   貼り付けるまではこの端末だけに保存して動きます（プレビューでも試せます）。
-   ==================================================================== */
-const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
-};
-const ROOM_ID = "ouchi"; // 夫婦で同じ文字列にする（変更可）
-/* ==================================================================== */
+/* 設定シートから貼り付けるだけで同期が始まります。コード編集不要。 */
+function getSavedConfig(){
+  try{ return JSON.parse(localStorage.getItem("kaimono_fb_cfg")||"{}"); }catch(e){ return {}; }
+}
+function getSavedRoom(){ return localStorage.getItem("kaimono_room") || "ouchi"; }
 
 let items = [];
 let CLOUD = false, db = null;
@@ -227,12 +226,11 @@ const esc = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 /* ===== データ層（クラウド or ローカル） ===== */
-function configFilled(){ return firebaseConfig.apiKey && firebaseConfig.projectId; }
-
 function initData(){
-  if (typeof firebase !== "undefined" && configFilled()){
+  const cfg = getSavedConfig();
+  if (typeof firebase !== "undefined" && cfg.apiKey && cfg.projectId){
     try{
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(cfg);
       db = firebase.firestore();
       try{ db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
       CLOUD = true;
@@ -245,7 +243,7 @@ function initData(){
     CLOUD = false; loadLocal(); renderList();
   }
 }
-function col(){ return db.collection("rooms").doc(ROOM_ID).collection("items"); }
+function col(){ return db.collection("rooms").doc(getSavedRoom()).collection("items"); }
 function loadLocal(){ try{ items = JSON.parse(localStorage.getItem("kaimono_items")) || []; }catch(e){ items=[]; } }
 function saveLocal(){ localStorage.setItem("kaimono_items", JSON.stringify(items)); }
 
@@ -419,19 +417,70 @@ function closeSheet(){ overlay.classList.remove("show"); }
 overlay.addEventListener("click", e=>{ if(e.target===overlay) closeSheet(); });
 
 $("gear").addEventListener("click", ()=>{
-  openSheet(`
+  const room = getSavedRoom();
+  openSheet(CLOUD ? `
     <h3>設定</h3>
     <div class="field"><label>あなたの名前</label><input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"></div>
-    <div class="syncbox ${CLOUD?'on':''}">
-      <div class="syncrow"><span>同期</span><span class="sv">${CLOUD?'クラウド同期中':'この端末だけ'}</span></div>
-      <div class="syncrow"><span>ルーム</span><span class="sv">${esc(ROOM_ID)}</span></div>
+    <div class="syncbox on">
+      <div class="syncrow"><span>同期</span><span class="sv">クラウド同期中 ✓</span></div>
+      <div class="syncrow"><span>ルームID</span><span class="sv">${esc(room)}</span></div>
     </div>
-    <p class="hint">夫婦で同じリストを見るには、2台ともこのファイルにFirebaseのfirebaseConfigを貼り付けて同じルームIDにします。設定で迷ったらconfigを送ってください、組み込みます。</p>
-    <button class="save" data-act="closeset">閉じる</button>
+    <p class="hint">2台とも同じルームIDで同期しています。相手のスマホでも同じ手順でfirebaseConfigとルームIDを設定してください。</p>
+    <button class="save danger" id="resetSync">同期設定をリセット</button>
+    <button class="save sub" data-act="closeset">閉じる</button>
+  ` : `
+    <h3>設定</h3>
+    <div class="field"><label>あなたの名前</label><input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"></div>
+    <div class="syncbox">
+      <div class="syncrow"><span>同期</span><span class="sv">この端末だけ</span></div>
+    </div>
+    <div class="field"><label>Firebase設定（貼り付けるだけでOK）</label>
+      <textarea class="cfgtxt" id="cfgInput" placeholder='{"apiKey":"AIza...","authDomain":"xxx.firebaseapp.com","projectId":"xxx",...}'></textarea>
+    </div>
+    <div class="field"><label>ルームID（2人で同じ文字列にする）</label>
+      <input id="roomInput" value="${esc(room)}" placeholder="例: ouchi" autocomplete="off" autocorrect="off" autocapitalize="off">
+    </div>
+    <ol class="steps">
+      <li><a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> でプロジェクトを作成（Googleアカウントで無料）</li>
+      <li>「Firestore Database」を作成 → <strong>テストモード</strong>で開始</li>
+      <li>プロジェクトの設定 ⚙ → 「ウェブアプリを追加」→ <code>firebaseConfig</code> の <code>{…}</code> 全体をコピー</li>
+      <li>上の枠に貼り付けて「同期を開始」。2台目も同じ手順で同じルームIDを入力</li>
+    </ol>
+    <button class="save" id="startSync">同期を開始</button>
+    <button class="save sub" data-act="closeset">閉じる</button>
   `);
-  const m = $("meName");
-  m.addEventListener("input", ()=>{ meName = m.value.trim(); localStorage.setItem("kaimono_me", meName); });
-  sheet.querySelector('[data-act="closeset"]').addEventListener("click", closeSheet);
+
+  const m = document.getElementById("meName");
+  if(m) m.addEventListener("input", ()=>{ meName = m.value.trim(); localStorage.setItem("kaimono_me", meName); });
+
+  document.getElementById("startSync")?.addEventListener("click", ()=>{
+    const raw = document.getElementById("cfgInput").value.trim();
+    const roomVal = document.getElementById("roomInput").value.trim() || "ouchi";
+    let cfg;
+    try{
+      // {} 全体またはオブジェクトリテラルどちらでもパースできるように
+      cfg = JSON.parse(raw);
+    }catch(e){
+      alert("形式が正しくありません。\nfirebaseConfig の { } 全体をそのまま貼り付けてください。");
+      return;
+    }
+    if(!cfg.apiKey || !cfg.projectId){
+      alert("apiKey と projectId が見つかりません。\nFirebaseコンソールの firebaseConfig をそのまま貼り付けてください。");
+      return;
+    }
+    localStorage.setItem("kaimono_fb_cfg", JSON.stringify(cfg));
+    localStorage.setItem("kaimono_room", roomVal);
+    location.reload();
+  });
+
+  document.getElementById("resetSync")?.addEventListener("click", ()=>{
+    if(confirm("同期設定を削除してこの端末だけの保存に戻しますか？")){
+      localStorage.removeItem("kaimono_fb_cfg");
+      location.reload();
+    }
+  });
+
+  sheet.querySelector('[data-act="closeset"]')?.addEventListener("click", closeSheet);
 });
 
 /* ===== 起動 ===== */
