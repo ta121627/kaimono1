@@ -14,10 +14,6 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 
-<!-- ▼ クラウド同期を使うときだけ有効。設定が空の間はこの端末に保存して動きます ▼ -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{
@@ -29,7 +25,7 @@ input,button{font-family:inherit;}
 button{cursor:pointer;}
 :focus-visible{outline:2px solid #FF3B81;outline-offset:2px;}
 
-/* ===== ナビバー（コンパクト） ===== */
+/* ===== ナビバー ===== */
 .navbar{
   position:sticky;top:0;z-index:50;
   height:44px;padding-top:env(safe-area-inset-top);
@@ -152,6 +148,7 @@ button{cursor:pointer;}
   width:100%;background:#FFFFFF;border-radius:18px 18px 0 0;
   padding:20px 18px calc(20px + env(safe-area-inset-bottom));
   transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);
+  max-height:90vh;overflow-y:auto;
 }
 .overlay.show .sheet{transform:translateY(0);}
 .sheet h3{font-size:19px;font-weight:700;text-align:center;margin-bottom:16px;}
@@ -164,18 +161,19 @@ button{cursor:pointer;}
 .syncrow:not(:last-child){border-bottom:0.5px solid #F2DCE6;}
 .syncrow .sv{color:#A8949D;}
 .syncbox.on .syncrow .sv{color:#E62E70;font-weight:600;}
-.hint{font-size:12px;color:#A8949D;line-height:1.6;margin-bottom:16px;padding:0 2px;}
+.hint{font-size:12px;color:#A8949D;line-height:1.6;margin-bottom:14px;padding:0 2px;}
 .save{width:100%;border:none;background:#FF3B81;color:#fff;border-radius:13px;padding:14px;font-size:17px;font-weight:600;}
 .save:active{background:#E62E70;}
 .save.sub{background:transparent;color:#A8949D;font-size:15px;padding:10px;}
 .save.danger{background:#FF3B30;}
 .save.danger:active{background:#D4291F;}
-.steps{list-style:none;counter-reset:s;margin-bottom:14px;}
-.steps li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;font-size:14px;color:#5A4A52;margin-bottom:11px;line-height:1.5;}
-.steps li::before{content:counter(s);flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#FF3B81;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
-.steps a{color:#FF3B81;font-weight:600;text-decoration:none;}
-.steps code{background:#FFF0F4;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px;word-break:break-all;}
-.cfgtxt{width:100%;height:78px;border:none;background:#FFF0F4;border-radius:12px;padding:12px;font-size:12px;font-family:monospace;resize:none;outline:none;color:#1C1C1E;line-height:1.4;}
+.roomcode{
+  background:#FFF0F4;border-radius:12px;padding:16px;
+  font-size:26px;font-weight:800;letter-spacing:6px;
+  text-align:center;color:#FF3B81;
+  margin-bottom:10px;
+}
+.divider{text-align:center;color:#C2B2BA;font-size:13px;margin:14px 0;}
 
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important;}
@@ -205,14 +203,15 @@ button{cursor:pointer;}
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
 
 <script>
-/* 設定シートから貼り付けるだけで同期が始まります。コード編集不要。 */
-function getSavedConfig(){
-  try{ return JSON.parse(localStorage.getItem("kaimono_fb_cfg")||"{}"); }catch(e){ return {}; }
-}
-function getSavedRoom(){ return localStorage.getItem("kaimono_room") || "ouchi"; }
+/* ===== 設定 ===== */
+const KVDB = "https://kvdb.io";
+let roomId = localStorage.getItem("kaimono_room") || "";
 
 let items = [];
-let CLOUD = false, db = null;
+let CLOUD = false;
+let syncTimer = null;
+let syncing = false;
+let remoteAt = 0;
 let meName = localStorage.getItem("kaimono_me") || "";
 let suppressTap = false;
 let sw = null;
@@ -221,64 +220,109 @@ const $ = id => document.getElementById(id);
 const list = $("list");
 const overlay = $("overlay");
 const sheet = $("sheet");
-
 const esc = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-/* ===== データ層（クラウド or ローカル） ===== */
-function initData(){
-  const cfg = getSavedConfig();
-  if (typeof firebase !== "undefined" && cfg.apiKey && cfg.projectId){
-    try{
-      firebase.initializeApp(cfg);
-      db = firebase.firestore();
-      try{ db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
-      CLOUD = true;
-      col().orderBy("order").onSnapshot(snap=>{
-        items = snap.docs.map(d=>({id:d.id, ...d.data()}));
-        renderList();
-      });
-    }catch(e){ console.warn("Firebase初期化に失敗。ローカルに切替", e); CLOUD=false; loadLocal(); renderList(); }
-  } else {
-    CLOUD = false; loadLocal(); renderList();
-  }
+/* ===== クラウド同期（kvdb.io） ===== */
+async function kvGet(key){
+  const r = await fetch(`${KVDB}/${roomId}/${key}`);
+  if (r.status===404) return null;
+  if (!r.ok) throw new Error(r.status);
+  return r.json().catch(()=>null);
 }
-function col(){ return db.collection("rooms").doc(getSavedRoom()).collection("items"); }
-function loadLocal(){ try{ items = JSON.parse(localStorage.getItem("kaimono_items")) || []; }catch(e){ items=[]; } }
+async function kvPut(key, val){
+  const r = await fetch(`${KVDB}/${roomId}/${key}`,{
+    method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(val)
+  });
+  if (!r.ok) throw new Error(r.status);
+}
+async function createRoom(){
+  const r = await fetch(`${KVDB}/`,{method:"POST"});
+  if (!r.ok) throw new Error("bucket creation failed");
+  return (await r.text()).trim();
+}
+
+function mergeItems(remoteItems){
+  const byId = {};
+  for (const ri of remoteItems) byId[ri.id] = ri;
+  for (const li of items){
+    if (!byId[li.id] || (li.at||0) > (byId[li.id].at||0)) byId[li.id] = li;
+  }
+  return Object.values(byId).filter(i => !i._del || (Date.now()-(i._delAt||0)) < 300000);
+}
+
+async function pull(){
+  const remote = await kvGet("list");
+  if (!remote || remote.at <= remoteAt) return false;
+  remoteAt = remote.at;
+  items = mergeItems(remote.items||[]);
+  saveLocal(); renderList();
+  return true;
+}
+async function push(){
+  const payload = {at:Date.now(), items};
+  await kvPut("list", payload);
+  remoteAt = payload.at;
+}
+async function syncWrite(){
+  if (!CLOUD || !roomId) return;
+  try { await pull(); await push(); } catch(e){ console.warn("sync write failed",e); }
+}
+async function syncTick(){
+  if (syncing || !CLOUD || !roomId) return;
+  syncing = true;
+  try { await pull(); } catch(e){ console.warn("sync poll failed",e); } finally { syncing=false; }
+}
+function startSync(){
+  CLOUD = true;
+  syncTick();
+  syncTimer = setInterval(syncTick, 3000);
+}
+function stopSync(){
+  CLOUD = false;
+  clearInterval(syncTimer); syncTimer = null;
+}
+document.addEventListener("visibilitychange", ()=>{
+  if (document.visibilityState==="visible" && CLOUD) syncTick();
+});
+
+/* ===== ローカルストレージ ===== */
+function loadLocal(){ try{ items = JSON.parse(localStorage.getItem("kaimono_items"))||[]; }catch(e){ items=[]; } }
 function saveLocal(){ localStorage.setItem("kaimono_items", JSON.stringify(items)); }
 
+/* ===== データ操作 ===== */
 function addItem(name){
-  const base = { name, checked:false, addedBy:meName||"", order:Date.now(), checkedAt:0 };
-  if (CLOUD){ col().add(base); }
-  else { base.id=newId(); items.push(base); saveLocal(); renderList({enterId:base.id}); }
+  const it = {id:newId(), name, checked:false, addedBy:meName||"", order:Date.now(), checkedAt:0, at:Date.now()};
+  items.push(it); saveLocal(); renderList({enterId:it.id}); syncWrite();
 }
 function toggle(id){
   const it = items.find(x=>x.id===id); if(!it) return;
-  it.checked = !it.checked; it.checkedAt = it.checked ? Date.now() : 0;
-  renderList({toggledId:id});
-  if (CLOUD){ col().doc(id).update({checked:it.checked, checkedAt:it.checkedAt}); }
-  else { saveLocal(); }
+  it.checked = !it.checked; it.checkedAt = it.checked ? Date.now() : 0; it.at = Date.now();
+  saveLocal(); renderList({toggledId:id}); syncWrite();
 }
 function removeItem(id){
-  if (CLOUD){ col().doc(id).delete(); }
-  else { items = items.filter(x=>x.id!==id); saveLocal(); renderList(); }
+  const it = items.find(x=>x.id===id);
+  if (it && CLOUD){ it._del=true; it._delAt=Date.now(); it.at=Date.now(); }
+  else { items = items.filter(x=>x.id!==id); }
+  saveLocal(); renderList(); syncWrite();
 }
 function clearCompleted(){
-  const done = items.filter(i=>i.checked);
-  if (CLOUD){ done.forEach(i=>col().doc(i.id).delete()); }
-  else { items = items.filter(i=>!i.checked); saveLocal(); renderList(); }
+  const now = Date.now();
+  if (CLOUD){ items.filter(i=>i.checked).forEach(i=>{ i._del=true; i._delAt=now; i.at=now; }); }
+  else { items = items.filter(i=>!i.checked); }
+  saveLocal(); renderList(); syncWrite();
 }
 
-/* ===== 並び順：未チェックを上（追加順）／チェック済みは下（チェックした順） ===== */
+/* ===== 並び順 ===== */
 function sorted(){
-  return [...items].sort((a,b)=>{
+  return [...items].filter(i=>!i._del).sort((a,b)=>{
     if (!!a.checked !== !!b.checked) return a.checked ? 1 : -1;
     if (a.checked) return (a.checkedAt||0) - (b.checkedAt||0);
     return (a.order||0) - (b.order||0);
   });
 }
 
-/* ===== 描画（FLIPで滑らかに移動） ===== */
+/* ===== 描画 ===== */
 function cellHTML(i, opts){
   const checked = i.checked;
   const by = (!checked && i.addedBy) ? `<span class="by">${esc(i.addedBy)}</span>` : "";
@@ -294,9 +338,8 @@ function cellHTML(i, opts){
 }
 
 function renderList(opts={}){
-  // FLIP用に現在位置を記録
   const old = {};
-  list.querySelectorAll(".cell").forEach(c=>{ old[c.dataset.id] = c.getBoundingClientRect().top; });
+  list.querySelectorAll(".cell").forEach(c=>{ old[c.dataset.id]=c.getBoundingClientRect().top; });
 
   const arr = sorted();
   const left = arr.filter(i=>!i.checked).length;
@@ -308,7 +351,7 @@ function renderList(opts={}){
     return;
   }
 
-  let html = `<div class="card">` + arr.map(i=>cellHTML(i, opts)).join("") + `</div>`;
+  let html = `<div class="card">` + arr.map(i=>cellHTML(i,opts)).join("") + `</div>`;
   if (arr.some(i=>i.checked)) html += `<button class="clear" data-act="clear">チェック済みを消す</button>`;
   list.innerHTML = html;
 
@@ -329,12 +372,12 @@ function renderList(opts={}){
     });
     if (opts.toggledId){
       const chk = list.querySelector(`.cell[data-id="${opts.toggledId}"] .check`);
-      if (chk){ chk.classList.add("pop"); setTimeout(()=>chk.classList.remove("pop"), 380); }
+      if (chk){ chk.classList.add("pop"); setTimeout(()=>chk.classList.remove("pop"),380); }
     }
   });
 }
 
-/* ===== 左スワイプで削除（ポインタ操作：iPhoneでもマウスでもOK） ===== */
+/* ===== 左スワイプで削除 ===== */
 function currentTX(el){ const m=/translateX\(([-0-9.]+)px\)/.exec(el.style.transform||""); return m?parseFloat(m[1]):0; }
 function closeOthers(except){
   list.querySelectorAll(".row").forEach(r=>{
@@ -342,65 +385,62 @@ function closeOthers(except){
   });
 }
 list.addEventListener("pointerdown", e=>{
-  const row = e.target.closest(".row"); if(!row) return;
-  sw = { row, startX:e.clientX, startY:e.clientY, locked:null, base:currentTX(row) };
+  const row=e.target.closest(".row"); if(!row) return;
+  sw={row, startX:e.clientX, startY:e.clientY, locked:null, base:currentTX(row)};
 });
 list.addEventListener("pointermove", e=>{
   if(!sw) return;
-  const dx = e.clientX - sw.startX, dy = e.clientY - sw.startY;
+  const dx=e.clientX-sw.startX, dy=e.clientY-sw.startY;
   if (sw.locked===null){
     if (Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)){ sw.locked="h"; try{sw.row.setPointerCapture(e.pointerId);}catch(_){} }
     else if (Math.abs(dy)>8){ sw.locked="v"; }
   }
   if (sw.locked==="h"){
-    let tx = Math.max(-76, Math.min(0, sw.base + dx));
-    sw.row.style.transition = "none";
-    sw.row.style.transform = `translateX(${tx}px)`;
+    sw.row.style.transition="none";
+    sw.row.style.transform=`translateX(${Math.max(-76,Math.min(0,sw.base+dx))}px)`;
     e.preventDefault();
   }
 });
 function endSwipe(){
   if(!sw) return;
   if (sw.locked==="h"){
-    const open = currentTX(sw.row) <= -38;
-    sw.row.style.transition = "transform .25s ease";
-    sw.row.style.transform = `translateX(${open?-72:0}px)`;
-    closeOthers(open ? sw.row : null);
-    suppressTap = true; setTimeout(()=>suppressTap=false, 60);
+    const open=currentTX(sw.row)<=-38;
+    sw.row.style.transition="transform .25s ease";
+    sw.row.style.transform=`translateX(${open?-72:0}px)`;
+    closeOthers(open?sw.row:null);
+    suppressTap=true; setTimeout(()=>suppressTap=false,60);
   }
-  sw = null;
+  sw=null;
 }
 list.addEventListener("pointerup", endSwipe);
 list.addEventListener("pointercancel", endSwipe);
 
 /* ===== タップ・削除・クリア ===== */
 function doDelete(id){
-  const cell = list.querySelector(`.cell[data-id="${id}"]`);
+  const cell=list.querySelector(`.cell[data-id="${id}"]`);
   if (cell){
-    cell.style.height = cell.offsetHeight + "px";
-    cell.getBoundingClientRect();
-    cell.style.overflow = "hidden";
-    cell.style.transition = "height .25s ease, opacity .25s ease";
-    cell.style.height = "0px"; cell.style.opacity = "0";
-    setTimeout(()=>removeItem(id), 240);
+    cell.style.height=cell.offsetHeight+"px"; cell.getBoundingClientRect();
+    cell.style.overflow="hidden"; cell.style.transition="height .25s ease,opacity .25s ease";
+    cell.style.height="0px"; cell.style.opacity="0";
+    setTimeout(()=>removeItem(id),240);
   } else removeItem(id);
 }
 list.addEventListener("click", e=>{
-  const t = e.target.closest("[data-act]"); if(!t) return;
-  const act = t.dataset.act, id = t.dataset.id;
+  const t=e.target.closest("[data-act]"); if(!t) return;
+  const act=t.dataset.act, id=t.dataset.id;
   if (act==="del"){ doDelete(id); return; }
   if (act==="clear"){ clearCompleted(); return; }
   if (act==="tap"){
     if (suppressTap) return;
-    const row = list.querySelector(`.row[data-id="${id}"]`);
-    if (row && currentTX(row) <= -10){ row.style.transition="transform .25s ease"; row.style.transform="translateX(0)"; return; }
+    const row=list.querySelector(`.row[data-id="${id}"]`);
+    if (row && currentTX(row)<=-10){ row.style.transition="transform .25s ease"; row.style.transform="translateX(0)"; return; }
     toggle(id);
   }
 });
 
 /* ===== 追加バー ===== */
 function quickAdd(){
-  const inp = $("inp"); const v = inp.value.trim(); if(!v) return;
+  const inp=$("inp"); const v=inp.value.trim(); if(!v) return;
   addItem(v); inp.value=""; inp.focus();
 }
 $("addBtn").addEventListener("click", quickAdd);
@@ -408,83 +448,113 @@ $("inp").addEventListener("keydown", e=>{ if(e.key==="Enter") quickAdd(); });
 
 /* ===== スクロールでナビ表示 ===== */
 window.addEventListener("scroll", ()=>{
-  $("navbar").classList.toggle("scrolled", window.scrollY > 30);
-}, {passive:true});
+  $("navbar").classList.toggle("scrolled", window.scrollY>30);
+},{passive:true});
 
 /* ===== 設定シート ===== */
-function openSheet(html){ sheet.innerHTML = html; overlay.classList.add("show"); }
+function openSheet(html){ sheet.innerHTML=html; overlay.classList.add("show"); }
 function closeSheet(){ overlay.classList.remove("show"); }
 overlay.addEventListener("click", e=>{ if(e.target===overlay) closeSheet(); });
 
 $("gear").addEventListener("click", ()=>{
-  const room = getSavedRoom();
   openSheet(CLOUD ? `
     <h3>設定</h3>
-    <div class="field"><label>あなたの名前</label><input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"></div>
+    <div class="field"><label>あなたの名前</label>
+      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
+             autocomplete="off" autocorrect="off" autocapitalize="off"></div>
     <div class="syncbox on">
       <div class="syncrow"><span>同期</span><span class="sv">クラウド同期中 ✓</span></div>
-      <div class="syncrow"><span>ルームID</span><span class="sv">${esc(room)}</span></div>
     </div>
-    <p class="hint">2台とも同じルームIDで同期しています。相手のスマホでも同じ手順でfirebaseConfigとルームIDを設定してください。</p>
-    <button class="save danger" id="resetSync">同期設定をリセット</button>
-    <button class="save sub" data-act="closeset">閉じる</button>
+    <div class="field"><label>ルームコード（パートナーに教える）</label>
+      <div class="roomcode">${esc(roomId)}</div>
+    </div>
+    <button class="save" id="copyBtn">ルームコードをコピー</button>
+    <button class="save danger" id="stopBtn" style="margin-top:8px;">同期を解除</button>
+    <button class="save sub" data-act="close">閉じる</button>
   ` : `
     <h3>設定</h3>
-    <div class="field"><label>あなたの名前</label><input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"></div>
+    <div class="field"><label>あなたの名前</label>
+      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
+             autocomplete="off" autocorrect="off" autocapitalize="off"></div>
     <div class="syncbox">
       <div class="syncrow"><span>同期</span><span class="sv">この端末だけ</span></div>
     </div>
-    <div class="field"><label>Firebase設定（貼り付けるだけでOK）</label>
-      <textarea class="cfgtxt" id="cfgInput" placeholder='{"apiKey":"AIza...","authDomain":"xxx.firebaseapp.com","projectId":"xxx",...}'></textarea>
+    <p class="hint">ルームを作成してコードをパートナーに送り、パートナーがそのコードで参加すると2台でリストが共有されます。</p>
+    <button class="save" id="createBtn">ルームを作成する（最初の1人）</button>
+    <div class="divider">― または ―</div>
+    <div class="field"><label>パートナーのルームコードで参加</label>
+      <input id="joinInput" placeholder="ルームコードを入力"
+             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+             style="margin-bottom:8px;">
+      <button class="save" id="joinBtn">参加する</button>
     </div>
-    <div class="field"><label>ルームID（2人で同じ文字列にする）</label>
-      <input id="roomInput" value="${esc(room)}" placeholder="例: ouchi" autocomplete="off" autocorrect="off" autocapitalize="off">
-    </div>
-    <ol class="steps">
-      <li><a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> でプロジェクトを作成（Googleアカウントで無料）</li>
-      <li>「Firestore Database」を作成 → <strong>テストモード</strong>で開始</li>
-      <li>プロジェクトの設定 ⚙ → 「ウェブアプリを追加」→ <code>firebaseConfig</code> の <code>{…}</code> 全体をコピー</li>
-      <li>上の枠に貼り付けて「同期を開始」。2台目も同じ手順で同じルームIDを入力</li>
-    </ol>
-    <button class="save" id="startSync">同期を開始</button>
-    <button class="save sub" data-act="closeset">閉じる</button>
+    <button class="save sub" data-act="close">閉じる</button>
   `);
 
   const m = document.getElementById("meName");
-  if(m) m.addEventListener("input", ()=>{ meName = m.value.trim(); localStorage.setItem("kaimono_me", meName); });
+  if(m) m.addEventListener("input",()=>{ meName=m.value.trim(); localStorage.setItem("kaimono_me",meName); });
 
-  document.getElementById("startSync")?.addEventListener("click", ()=>{
-    const raw = document.getElementById("cfgInput").value.trim();
-    const roomVal = document.getElementById("roomInput").value.trim() || "ouchi";
-    let cfg;
+  /* ルーム作成 */
+  document.getElementById("createBtn")?.addEventListener("click", async ()=>{
+    const btn = document.getElementById("createBtn");
+    btn.textContent="作成中…"; btn.disabled=true;
     try{
-      // {} 全体またはオブジェクトリテラルどちらでもパースできるように
-      cfg = JSON.parse(raw);
+      const id = await createRoom();
+      roomId = id; localStorage.setItem("kaimono_room", id);
+      await push();
+      startSync();
+      closeSheet();
+      setTimeout(()=>$("gear").click(), 350); // 同期中画面を再表示
     }catch(e){
-      alert("形式が正しくありません。\nfirebaseConfig の { } 全体をそのまま貼り付けてください。");
-      return;
-    }
-    if(!cfg.apiKey || !cfg.projectId){
-      alert("apiKey と projectId が見つかりません。\nFirebaseコンソールの firebaseConfig をそのまま貼り付けてください。");
-      return;
-    }
-    localStorage.setItem("kaimono_fb_cfg", JSON.stringify(cfg));
-    localStorage.setItem("kaimono_room", roomVal);
-    location.reload();
-  });
-
-  document.getElementById("resetSync")?.addEventListener("click", ()=>{
-    if(confirm("同期設定を削除してこの端末だけの保存に戻しますか？")){
-      localStorage.removeItem("kaimono_fb_cfg");
-      location.reload();
+      console.error(e);
+      btn.textContent="作成に失敗しました（ネット確認）"; btn.disabled=false;
     }
   });
 
-  sheet.querySelector('[data-act="closeset"]')?.addEventListener("click", closeSheet);
+  /* コードで参加 */
+  document.getElementById("joinBtn")?.addEventListener("click", async ()=>{
+    const code = document.getElementById("joinInput").value.trim();
+    if(!code){ alert("ルームコードを入力してください。"); return; }
+    const btn = document.getElementById("joinBtn");
+    btn.textContent="接続中…"; btn.disabled=true;
+    try{
+      roomId = code; localStorage.setItem("kaimono_room", code);
+      remoteAt = 0;
+      await pull();
+      startSync();
+      closeSheet();
+      setTimeout(()=>$("gear").click(), 350);
+    }catch(e){
+      console.error(e);
+      btn.textContent="接続失敗（コードを確認）"; btn.disabled=false;
+    }
+  });
+
+  /* コピー */
+  document.getElementById("copyBtn")?.addEventListener("click", ()=>{
+    navigator.clipboard?.writeText(roomId).then(()=>{
+      const b=document.getElementById("copyBtn");
+      b.textContent="コピーしました ✓";
+      setTimeout(()=>{ b.textContent="ルームコードをコピー"; },2000);
+    }).catch(()=> alert("コード: "+roomId));
+  });
+
+  /* 同期解除 */
+  document.getElementById("stopBtn")?.addEventListener("click", ()=>{
+    if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){
+      stopSync();
+      localStorage.removeItem("kaimono_room");
+      roomId="";
+      closeSheet();
+    }
+  });
+
+  sheet.querySelector('[data-act="close"]')?.addEventListener("click", closeSheet);
 });
 
 /* ===== 起動 ===== */
-initData();
+loadLocal();
+if (roomId){ startSync(); } else { renderList(); }
 </script>
 </body>
 </html>
