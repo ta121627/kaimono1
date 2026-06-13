@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+      <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FF6FA3"/>
+        <stop offset="1" stop-color="#FF3B81"/>
+      </linearGradient>
+      <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FF3B81"/>
+        <stop offset="1" stop-color="#E62E70"/>
+      </linearGradient>
+    </defs>
+<rect width="512" height="512" rx="112" fill="#FFF5F8"/>
+<g>
+  <circle cx="168" cy="186" r="34" fill="#FF3B81"/>
+  <path d="M152 186 l12 12 l24 -28" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="224" y="172" width="150" height="26" rx="13" fill="#FF3B81"/>
+
+  <circle cx="168" cy="266" r="34" fill="#FF3B81"/>
+  <path d="M152 266 l12 12 l24 -28" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="224" y="252" width="120" height="26" rx="13" fill="#FF3B81"/>
+
+  <circle cx="168" cy="346" r="34" fill="none" stroke="#FFC2D8" stroke-width="13"/>
+  <rect x="224" y="332" width="150" height="26" rx="13" fill="#FFC2D8"/>
+</g>
+</svg>
