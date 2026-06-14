@@ -25,7 +25,6 @@ input,button{font-family:inherit;}
 button{cursor:pointer;}
 :focus-visible{outline:2px solid #FF3B81;outline-offset:2px;}
 
-/* ===== ナビバー ===== */
 .navbar{
   position:sticky;top:0;z-index:50;
   height:44px;padding-top:env(safe-area-inset-top);
@@ -35,8 +34,7 @@ button{cursor:pointer;}
 }
 .navbar.scrolled{
   background:rgba(255,245,248,0.82);
-  backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
   border-bottom-color:#F0DCE4;
 }
 .navtitle{font-size:17px;font-weight:600;opacity:0;transition:opacity .25s ease;height:44px;line-height:44px;}
@@ -52,30 +50,18 @@ button{cursor:pointer;}
 .gear:active{transform:scale(0.9);background:#FFF0F4;}
 .gear svg{width:18px;height:18px;display:block;}
 
-/* ===== 大型タイトル ===== */
 .hero{padding:4px 20px 10px;}
 .hero h1{font-size:31px;font-weight:700;letter-spacing:-0.5px;}
 .hero .sub{font-size:15px;color:#A8949D;margin-top:3px;font-weight:500;}
 
-/* ===== リスト ===== */
 .list-wrap{padding:6px 16px 0;}
-.card{
-  background:#FFFFFF;border-radius:16px;overflow:hidden;
-  box-shadow:0 1px 0 rgba(0,0,0,0.02),0 10px 30px rgba(255,59,129,0.06);
-}
+.card{background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,0.02),0 10px 30px rgba(255,59,129,0.06);}
 .cell{position:relative;background:#FFFFFF;}
 .cell.enter{animation:cellIn .3s cubic-bezier(.2,.8,.2,1);}
 @keyframes cellIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
-
-.delbg{
-  position:absolute;inset:0;display:flex;justify-content:flex-end;align-items:stretch;
-  background:#FF3B30;
-}
-.delbtn{
-  width:72px;border:none;background:transparent;color:#fff;font-size:15px;font-weight:600;height:100%;
-}
+.delbg{position:absolute;inset:0;display:flex;justify-content:flex-end;align-items:stretch;background:#FF3B30;}
+.delbtn{width:72px;border:none;background:transparent;color:#fff;font-size:15px;font-weight:600;height:100%;}
 .delbtn:active{background:rgba(0,0,0,0.12);}
-
 .row{
   position:relative;z-index:1;background:#FFFFFF;
   display:flex;align-items:center;gap:13px;
@@ -84,7 +70,6 @@ button{cursor:pointer;}
   touch-action:pan-y;will-change:transform;
 }
 .cell:last-child .row{border-bottom:none;}
-
 .check{
   width:27px;height:27px;border-radius:50%;flex:0 0 auto;
   border:2.5px solid #FFC2D8;background:#FFFFFF;
@@ -96,24 +81,16 @@ button{cursor:pointer;}
 @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.22);}100%{transform:scale(1);}}
 .tick{color:#fff;font-size:15px;font-weight:800;line-height:1;opacity:0;transform:scale(.4);transition:opacity .18s ease,transform .18s ease;}
 .check.on .tick{opacity:1;transform:scale(1);}
-
 .name{flex:1;min-width:0;font-size:17px;line-height:1.3;word-break:break-word;transition:color .2s ease;}
 .row.done .name{color:#C9C2C6;text-decoration:line-through;}
 .by{font-size:12px;color:#C2B2BA;flex:0 0 auto;font-weight:500;}
-
-.clear{
-  display:block;margin:16px auto 4px;border:none;background:transparent;
-  color:#FF3B81;font-size:15px;font-weight:500;padding:8px 14px;border-radius:10px;
-}
+.clear{display:block;margin:16px auto 4px;border:none;background:transparent;color:#FF3B81;font-size:15px;font-weight:500;padding:8px 14px;border-radius:10px;}
 .clear:active{background:rgba(255,59,129,0.1);}
-
-/* 空状態 */
 .empty{text-align:center;color:#C2B2BA;padding:72px 24px;}
 .empty .em{font-size:50px;margin-bottom:12px;}
 .empty .t{font-size:17px;font-weight:600;color:#8A7680;}
 .empty .d{font-size:14px;margin-top:5px;}
 
-/* ===== 追加バー ===== */
 .addbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   padding:10px 16px calc(10px + env(safe-area-inset-bottom));
@@ -122,62 +99,37 @@ button{cursor:pointer;}
   border-top:0.5px solid #F0DCE4;
   display:flex;gap:10px;align-items:center;
 }
-.addbar input{
-  flex:1;border:none;background:#FFFFFF;border-radius:13px;
-  padding:13px 16px;font-size:16px;outline:none;color:#1C1C1E;
-  box-shadow:0 2px 10px rgba(214,51,108,0.08);
-}
+.addbar input{flex:1;border:none;background:#FFFFFF;border-radius:13px;padding:13px 16px;font-size:16px;outline:none;color:#1C1C1E;box-shadow:0 2px 10px rgba(214,51,108,0.08);}
 .addbar input::placeholder{color:#C9B8C0;}
-.plus{
-  width:46px;height:46px;flex:0 0 auto;border:none;border-radius:50%;
-  background:#FF3B81;color:#fff;font-size:26px;line-height:46px;font-weight:300;
-  box-shadow:0 4px 14px rgba(255,59,129,0.45);transition:transform .12s ease,background .12s ease;
-}
+.plus{width:46px;height:46px;flex:0 0 auto;border:none;border-radius:50%;background:#FF3B81;color:#fff;font-size:26px;line-height:46px;font-weight:300;box-shadow:0 4px 14px rgba(255,59,129,0.45);transition:transform .12s ease,background .12s ease;}
 .plus:active{transform:scale(0.92);background:#E62E70;}
 
-/* ===== シート ===== */
-.overlay{
-  position:fixed;inset:0;z-index:100;
-  background:rgba(0,0,0,0.4);
-  display:flex;align-items:flex-end;
-  opacity:0;pointer-events:none;
-  transition:opacity .3s ease;
-}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s ease;}
 .overlay.show{opacity:1;pointer-events:auto;}
-.sheet{
-  width:100%;background:#FFFFFF;border-radius:18px 18px 0 0;
-  padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);
-  max-height:90vh;overflow-y:auto;
-}
+.sheet{width:100%;background:#FFFFFF;border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow-y:auto;}
 .overlay.show .sheet{transform:translateY(0);}
 .sheet h3{font-size:19px;font-weight:700;text-align:center;margin-bottom:16px;}
 .field{margin-bottom:14px;}
 .field label{font-size:12px;color:#A8949D;font-weight:600;display:block;margin-bottom:6px;padding-left:2px;}
-.field input{width:100%;border:none;background:#FFF0F4;border-radius:12px;padding:13px 15px;font-size:16px;outline:none;color:#1C1C1E;}
+.field input{width:100%;border:none;background:#FFF0F4;border-radius:12px;padding:13px 15px;font-size:15px;outline:none;color:#1C1C1E;}
 .syncbox{background:#FFF0F4;border-radius:12px;padding:4px 0;margin-bottom:12px;}
 .syncbox.on{background:#FFE9F1;}
 .syncrow{display:flex;justify-content:space-between;padding:11px 15px;font-size:15px;}
 .syncrow:not(:last-child){border-bottom:0.5px solid #F2DCE6;}
 .syncrow .sv{color:#A8949D;}
 .syncbox.on .syncrow .sv{color:#E62E70;font-weight:600;}
-.hint{font-size:12px;color:#A8949D;line-height:1.6;margin-bottom:14px;padding:0 2px;}
+.hint{font-size:13px;color:#5A4A52;line-height:1.65;margin-bottom:14px;padding:0 2px;}
+.hint b{color:#FF3B81;}
 .save{width:100%;border:none;background:#FF3B81;color:#fff;border-radius:13px;padding:14px;font-size:17px;font-weight:600;}
 .save:active{background:#E62E70;}
 .save.sub{background:transparent;color:#A8949D;font-size:15px;padding:10px;}
 .save.danger{background:#FF3B30;}
 .save.danger:active{background:#D4291F;}
-.roomcode{
-  background:#FFF0F4;border-radius:12px;padding:16px;
-  font-size:26px;font-weight:800;letter-spacing:6px;
-  text-align:center;color:#FF3B81;
-  margin-bottom:10px;
-}
-.divider{text-align:center;color:#C2B2BA;font-size:13px;margin:14px 0;}
+.save:disabled{opacity:.5;}
+.urlhint{background:#FFF0F4;border-radius:10px;padding:10px 13px;font-size:12px;color:#A8949D;margin-bottom:14px;line-height:1.6;}
+.urlhint code{color:#E62E70;font-family:monospace;word-break:break-all;}
 
-@media (prefers-reduced-motion:reduce){
-  *{animation:none !important;transition:none !important;}
-}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
 </style>
 </head>
 <body>
@@ -203,358 +155,296 @@ button{cursor:pointer;}
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
 
 <script>
-/* ===== 設定 ===== */
-const KVDB = "https://kvdb.io";
-let roomId = localStorage.getItem("kaimono_room") || "";
+/* ===== 設定読み込み ===== */
+let DB_URL  = localStorage.getItem("kaimono_db_url") || "";
+let ROOM    = localStorage.getItem("kaimono_room")   || "ouchi";
+let meName  = localStorage.getItem("kaimono_me")     || "";
 
-let items = [];
-let CLOUD = false;
-let syncTimer = null;
-let syncing = false;
-let remoteAt = 0;
-let meName = localStorage.getItem("kaimono_me") || "";
-let suppressTap = false;
-let sw = null;
+let items = [], CLOUD = false, evSource = null, syncTimer = null;
+let remoteAt = 0, suppressTap = false, sw = null;
 
 const $ = id => document.getElementById(id);
-const list = $("list");
-const overlay = $("overlay");
-const sheet = $("sheet");
-const esc = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const list = $("list"), overlay = $("overlay"), sheet = $("sheet");
+const esc = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-/* ===== クラウド同期（kvdb.io） ===== */
-async function kvGet(key){
-  const r = await fetch(`${KVDB}/${roomId}/${key}`);
-  if (r.status===404) return null;
-  if (!r.ok) throw new Error(r.status);
-  return r.json().catch(()=>null);
+/* ===== Firebase Realtime Database REST ===== */
+function rtdbUrl(){ return `${DB_URL.replace(/\/+$/,"")}/rooms/${ROOM}/list.json`; }
+
+async function rtdbGet(){
+  const r = await fetch(rtdbUrl()); if(!r.ok) throw new Error(r.status);
+  return r.json();
 }
-async function kvPut(key, val){
-  const r = await fetch(`${KVDB}/${roomId}/${key}`,{
-    method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(val)
-  });
-  if (!r.ok) throw new Error(r.status);
-}
-async function createRoom(){
-  const r = await fetch(`${KVDB}/`,{method:"POST"});
-  if (!r.ok) throw new Error("bucket creation failed");
-  return (await r.text()).trim();
+async function rtdbPut(data){
+  const r = await fetch(rtdbUrl(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+  if(!r.ok) throw new Error(r.status);
 }
 
 function mergeItems(remoteItems){
-  const byId = {};
-  for (const ri of remoteItems) byId[ri.id] = ri;
-  for (const li of items){
-    if (!byId[li.id] || (li.at||0) > (byId[li.id].at||0)) byId[li.id] = li;
-  }
-  return Object.values(byId).filter(i => !i._del || (Date.now()-(i._delAt||0)) < 300000);
+  const byId={};
+  for(const ri of remoteItems) byId[ri.id]=ri;
+  for(const li of items){ if(!byId[li.id]||(li.at||0)>(byId[li.id].at||0)) byId[li.id]=li; }
+  return Object.values(byId).filter(i=>!i._del||(Date.now()-(i._delAt||0))<300000);
 }
 
-async function pull(){
-  const remote = await kvGet("list");
-  if (!remote || remote.at <= remoteAt) return false;
-  remoteAt = remote.at;
-  items = mergeItems(remote.items||[]);
+function applyRemote(data){
+  if(!data||!data.items) return;
+  if(data.at<=remoteAt) return;
+  remoteAt=data.at;
+  items=mergeItems(data.items);
   saveLocal(); renderList();
-  return true;
 }
-async function push(){
-  const payload = {at:Date.now(), items};
-  await kvPut("list", payload);
-  remoteAt = payload.at;
-}
+
 async function syncWrite(){
-  if (!CLOUD || !roomId) return;
-  try { await pull(); await push(); } catch(e){ console.warn("sync write failed",e); }
+  if(!CLOUD||!DB_URL) return;
+  try{ await rtdbPut({at:Date.now(),items}); }catch(e){ console.warn("push failed",e); }
 }
-async function syncTick(){
-  if (syncing || !CLOUD || !roomId) return;
-  syncing = true;
-  try { await pull(); } catch(e){ console.warn("sync poll failed",e); } finally { syncing=false; }
-}
+
 function startSync(){
-  CLOUD = true;
-  syncTick();
-  syncTimer = setInterval(syncTick, 3000);
+  CLOUD=true;
+  rtdbGet().then(applyRemote).catch(e=>console.warn("initial pull failed",e));
+  /* Server-Sent Events でリアルタイム受信（失敗したらポーリングに切替） */
+  try{
+    evSource = new EventSource(rtdbUrl());
+    evSource.addEventListener("put", e=>{
+      try{ applyRemote(JSON.parse(e.data).data); }catch(_){}
+    });
+    evSource.onerror = ()=>{
+      evSource.close(); evSource=null;
+      if(!syncTimer) syncTimer=setInterval(()=>{
+        rtdbGet().then(applyRemote).catch(()=>{});
+      },5000);
+    };
+  }catch(e){
+    syncTimer=setInterval(()=>{ rtdbGet().then(applyRemote).catch(()=>{}); },5000);
+  }
 }
+
 function stopSync(){
-  CLOUD = false;
-  clearInterval(syncTimer); syncTimer = null;
+  CLOUD=false;
+  if(evSource){ evSource.close(); evSource=null; }
+  clearInterval(syncTimer); syncTimer=null;
 }
-document.addEventListener("visibilitychange", ()=>{
-  if (document.visibilityState==="visible" && CLOUD) syncTick();
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"&&CLOUD)
+    rtdbGet().then(applyRemote).catch(()=>{});
 });
 
-/* ===== ローカルストレージ ===== */
-function loadLocal(){ try{ items = JSON.parse(localStorage.getItem("kaimono_items"))||[]; }catch(e){ items=[]; } }
-function saveLocal(){ localStorage.setItem("kaimono_items", JSON.stringify(items)); }
+/* ===== ローカル ===== */
+function loadLocal(){ try{ items=JSON.parse(localStorage.getItem("kaimono_items"))||[]; }catch(e){ items=[]; } }
+function saveLocal(){ localStorage.setItem("kaimono_items",JSON.stringify(items)); }
 
 /* ===== データ操作 ===== */
 function addItem(name){
-  const it = {id:newId(), name, checked:false, addedBy:meName||"", order:Date.now(), checkedAt:0, at:Date.now()};
+  const it={id:newId(),name,checked:false,addedBy:meName||"",order:Date.now(),checkedAt:0,at:Date.now()};
   items.push(it); saveLocal(); renderList({enterId:it.id}); syncWrite();
 }
 function toggle(id){
-  const it = items.find(x=>x.id===id); if(!it) return;
-  it.checked = !it.checked; it.checkedAt = it.checked ? Date.now() : 0; it.at = Date.now();
+  const it=items.find(x=>x.id===id); if(!it) return;
+  it.checked=!it.checked; it.checkedAt=it.checked?Date.now():0; it.at=Date.now();
   saveLocal(); renderList({toggledId:id}); syncWrite();
 }
 function removeItem(id){
-  const it = items.find(x=>x.id===id);
-  if (it && CLOUD){ it._del=true; it._delAt=Date.now(); it.at=Date.now(); }
-  else { items = items.filter(x=>x.id!==id); }
+  const it=items.find(x=>x.id===id);
+  if(it&&CLOUD){ it._del=true; it._delAt=Date.now(); it.at=Date.now(); }
+  else{ items=items.filter(x=>x.id!==id); }
   saveLocal(); renderList(); syncWrite();
 }
 function clearCompleted(){
-  const now = Date.now();
-  if (CLOUD){ items.filter(i=>i.checked).forEach(i=>{ i._del=true; i._delAt=now; i.at=now; }); }
-  else { items = items.filter(i=>!i.checked); }
+  const now=Date.now();
+  if(CLOUD){ items.filter(i=>i.checked).forEach(i=>{ i._del=true; i._delAt=now; i.at=now; }); }
+  else{ items=items.filter(i=>!i.checked); }
   saveLocal(); renderList(); syncWrite();
 }
 
 /* ===== 並び順 ===== */
 function sorted(){
   return [...items].filter(i=>!i._del).sort((a,b)=>{
-    if (!!a.checked !== !!b.checked) return a.checked ? 1 : -1;
-    if (a.checked) return (a.checkedAt||0) - (b.checkedAt||0);
-    return (a.order||0) - (b.order||0);
+    if(!!a.checked!==!!b.checked) return a.checked?1:-1;
+    if(a.checked) return (a.checkedAt||0)-(b.checkedAt||0);
+    return (a.order||0)-(b.order||0);
   });
 }
 
 /* ===== 描画 ===== */
-function cellHTML(i, opts){
-  const checked = i.checked;
-  const by = (!checked && i.addedBy) ? `<span class="by">${esc(i.addedBy)}</span>` : "";
-  const enter = (opts && i.id===opts.enterId) ? " enter" : "";
+function cellHTML(i,opts){
+  const checked=i.checked;
+  const by=(!checked&&i.addedBy)?`<span class="by">${esc(i.addedBy)}</span>`:"";
+  const enter=(opts&&i.id===opts.enterId)?" enter":"";
   return `<div class="cell${enter}" data-id="${i.id}">
     <div class="delbg"><button class="delbtn" data-act="del" data-id="${i.id}">削除</button></div>
     <div class="row ${checked?'done':''}" data-act="tap" data-id="${i.id}">
       <span class="check ${checked?'on':''}"><span class="tick">✓</span></span>
-      <span class="name">${esc(i.name)}</span>
-      ${by}
+      <span class="name">${esc(i.name)}</span>${by}
     </div>
   </div>`;
 }
 
 function renderList(opts={}){
-  const old = {};
+  const old={};
   list.querySelectorAll(".cell").forEach(c=>{ old[c.dataset.id]=c.getBoundingClientRect().top; });
-
-  const arr = sorted();
-  const left = arr.filter(i=>!i.checked).length;
-  $("sub").textContent = arr.length===0 ? "リストはまだ空です"
-                        : (left>0 ? `あと ${left} 個` : "全部そろいました 🎉");
-
-  if (arr.length===0){
-    list.innerHTML = `<div class="empty"><div class="em">🛒</div><div class="t">リストはまだ空です</div><div class="d">下に入力して追加しましょう</div></div>`;
+  const arr=sorted();
+  const left=arr.filter(i=>!i.checked).length;
+  $("sub").textContent=arr.length===0?"リストはまだ空です":(left>0?`あと ${left} 個`:"全部そろいました 🎉");
+  if(arr.length===0){
+    list.innerHTML=`<div class="empty"><div class="em">🛒</div><div class="t">リストはまだ空です</div><div class="d">下に入力して追加しましょう</div></div>`;
     return;
   }
-
-  let html = `<div class="card">` + arr.map(i=>cellHTML(i,opts)).join("") + `</div>`;
-  if (arr.some(i=>i.checked)) html += `<button class="clear" data-act="clear">チェック済みを消す</button>`;
-  list.innerHTML = html;
-
+  let html=`<div class="card">`+arr.map(i=>cellHTML(i,opts)).join("")+`</div>`;
+  if(arr.some(i=>i.checked)) html+=`<button class="clear" data-act="clear">チェック済みを消す</button>`;
+  list.innerHTML=html;
   requestAnimationFrame(()=>{
     list.querySelectorAll(".cell").forEach(c=>{
-      const id = c.dataset.id;
-      if (old[id] !== undefined){
-        const dy = old[id] - c.getBoundingClientRect().top;
-        if (dy){
-          c.style.transition = "none";
-          c.style.transform = `translateY(${dy}px)`;
-          requestAnimationFrame(()=>{
-            c.style.transition = "transform .36s cubic-bezier(.2,.8,.2,1)";
-            c.style.transform = "";
-          });
-        }
+      const id=c.dataset.id;
+      if(old[id]!==undefined){
+        const dy=old[id]-c.getBoundingClientRect().top;
+        if(dy){ c.style.transition="none"; c.style.transform=`translateY(${dy}px)`;
+          requestAnimationFrame(()=>{ c.style.transition="transform .36s cubic-bezier(.2,.8,.2,1)"; c.style.transform=""; }); }
       }
     });
-    if (opts.toggledId){
-      const chk = list.querySelector(`.cell[data-id="${opts.toggledId}"] .check`);
-      if (chk){ chk.classList.add("pop"); setTimeout(()=>chk.classList.remove("pop"),380); }
+    if(opts.toggledId){
+      const chk=list.querySelector(`.cell[data-id="${opts.toggledId}"] .check`);
+      if(chk){ chk.classList.add("pop"); setTimeout(()=>chk.classList.remove("pop"),380); }
     }
   });
 }
 
-/* ===== 左スワイプで削除 ===== */
+/* ===== スワイプ削除 ===== */
 function currentTX(el){ const m=/translateX\(([-0-9.]+)px\)/.exec(el.style.transform||""); return m?parseFloat(m[1]):0; }
 function closeOthers(except){
   list.querySelectorAll(".row").forEach(r=>{
-    if (r!==except && currentTX(r)!==0){ r.style.transition="transform .25s ease"; r.style.transform="translateX(0)"; }
+    if(r!==except&&currentTX(r)!==0){ r.style.transition="transform .25s ease"; r.style.transform="translateX(0)"; }
   });
 }
-list.addEventListener("pointerdown", e=>{
-  const row=e.target.closest(".row"); if(!row) return;
-  sw={row, startX:e.clientX, startY:e.clientY, locked:null, base:currentTX(row)};
-});
-list.addEventListener("pointermove", e=>{
-  if(!sw) return;
-  const dx=e.clientX-sw.startX, dy=e.clientY-sw.startY;
-  if (sw.locked===null){
-    if (Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)){ sw.locked="h"; try{sw.row.setPointerCapture(e.pointerId);}catch(_){} }
-    else if (Math.abs(dy)>8){ sw.locked="v"; }
+list.addEventListener("pointerdown",e=>{ const row=e.target.closest(".row"); if(!row)return; sw={row,startX:e.clientX,startY:e.clientY,locked:null,base:currentTX(row)}; });
+list.addEventListener("pointermove",e=>{
+  if(!sw)return;
+  const dx=e.clientX-sw.startX,dy=e.clientY-sw.startY;
+  if(sw.locked===null){
+    if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){ sw.locked="h"; try{sw.row.setPointerCapture(e.pointerId);}catch(_){} }
+    else if(Math.abs(dy)>8){ sw.locked="v"; }
   }
-  if (sw.locked==="h"){
-    sw.row.style.transition="none";
-    sw.row.style.transform=`translateX(${Math.max(-76,Math.min(0,sw.base+dx))}px)`;
-    e.preventDefault();
-  }
+  if(sw.locked==="h"){ sw.row.style.transition="none"; sw.row.style.transform=`translateX(${Math.max(-76,Math.min(0,sw.base+dx))}px)`; e.preventDefault(); }
 });
 function endSwipe(){
-  if(!sw) return;
-  if (sw.locked==="h"){
+  if(!sw)return;
+  if(sw.locked==="h"){
     const open=currentTX(sw.row)<=-38;
-    sw.row.style.transition="transform .25s ease";
-    sw.row.style.transform=`translateX(${open?-72:0}px)`;
-    closeOthers(open?sw.row:null);
-    suppressTap=true; setTimeout(()=>suppressTap=false,60);
+    sw.row.style.transition="transform .25s ease"; sw.row.style.transform=`translateX(${open?-72:0}px)`;
+    closeOthers(open?sw.row:null); suppressTap=true; setTimeout(()=>suppressTap=false,60);
   }
   sw=null;
 }
-list.addEventListener("pointerup", endSwipe);
-list.addEventListener("pointercancel", endSwipe);
+list.addEventListener("pointerup",endSwipe); list.addEventListener("pointercancel",endSwipe);
 
-/* ===== タップ・削除・クリア ===== */
+/* ===== タップ ===== */
 function doDelete(id){
   const cell=list.querySelector(`.cell[data-id="${id}"]`);
-  if (cell){
-    cell.style.height=cell.offsetHeight+"px"; cell.getBoundingClientRect();
-    cell.style.overflow="hidden"; cell.style.transition="height .25s ease,opacity .25s ease";
-    cell.style.height="0px"; cell.style.opacity="0";
-    setTimeout(()=>removeItem(id),240);
-  } else removeItem(id);
+  if(cell){ cell.style.height=cell.offsetHeight+"px"; cell.getBoundingClientRect(); cell.style.overflow="hidden"; cell.style.transition="height .25s ease,opacity .25s ease"; cell.style.height="0px"; cell.style.opacity="0"; setTimeout(()=>removeItem(id),240); }
+  else removeItem(id);
 }
-list.addEventListener("click", e=>{
-  const t=e.target.closest("[data-act]"); if(!t) return;
-  const act=t.dataset.act, id=t.dataset.id;
-  if (act==="del"){ doDelete(id); return; }
-  if (act==="clear"){ clearCompleted(); return; }
-  if (act==="tap"){
-    if (suppressTap) return;
+list.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]"); if(!t)return;
+  const act=t.dataset.act,id=t.dataset.id;
+  if(act==="del"){ doDelete(id); return; }
+  if(act==="clear"){ clearCompleted(); return; }
+  if(act==="tap"){
+    if(suppressTap)return;
     const row=list.querySelector(`.row[data-id="${id}"]`);
-    if (row && currentTX(row)<=-10){ row.style.transition="transform .25s ease"; row.style.transform="translateX(0)"; return; }
+    if(row&&currentTX(row)<=-10){ row.style.transition="transform .25s ease"; row.style.transform="translateX(0)"; return; }
     toggle(id);
   }
 });
 
 /* ===== 追加バー ===== */
-function quickAdd(){
-  const inp=$("inp"); const v=inp.value.trim(); if(!v) return;
-  addItem(v); inp.value=""; inp.focus();
-}
-$("addBtn").addEventListener("click", quickAdd);
-$("inp").addEventListener("keydown", e=>{ if(e.key==="Enter") quickAdd(); });
+function quickAdd(){ const inp=$("inp"),v=inp.value.trim(); if(!v)return; addItem(v); inp.value=""; inp.focus(); }
+$("addBtn").addEventListener("click",quickAdd);
+$("inp").addEventListener("keydown",e=>{ if(e.key==="Enter")quickAdd(); });
 
-/* ===== スクロールでナビ表示 ===== */
-window.addEventListener("scroll", ()=>{
-  $("navbar").classList.toggle("scrolled", window.scrollY>30);
-},{passive:true});
+window.addEventListener("scroll",()=>{ $("navbar").classList.toggle("scrolled",window.scrollY>30); },{passive:true});
 
 /* ===== 設定シート ===== */
 function openSheet(html){ sheet.innerHTML=html; overlay.classList.add("show"); }
 function closeSheet(){ overlay.classList.remove("show"); }
-overlay.addEventListener("click", e=>{ if(e.target===overlay) closeSheet(); });
+overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
 
-$("gear").addEventListener("click", ()=>{
+$("gear").addEventListener("click",()=>{
   openSheet(CLOUD ? `
     <h3>設定</h3>
     <div class="field"><label>あなたの名前</label>
-      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
-             autocomplete="off" autocorrect="off" autocapitalize="off"></div>
+      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off"></div>
     <div class="syncbox on">
       <div class="syncrow"><span>同期</span><span class="sv">クラウド同期中 ✓</span></div>
+      <div class="syncrow"><span>ルームID</span><span class="sv">${esc(ROOM)}</span></div>
     </div>
-    <div class="field"><label>ルームコード（パートナーに教える）</label>
-      <div class="roomcode">${esc(roomId)}</div>
-    </div>
-    <button class="save" id="copyBtn">ルームコードをコピー</button>
-    <button class="save danger" id="stopBtn" style="margin-top:8px;">同期を解除</button>
+    <p class="hint">リアルタイムで同期しています。<br>パートナーも同じ設定（URLとルームID）を入力すれば2台で共有できます。</p>
+    <button class="save danger" id="stopBtn">同期を解除</button>
     <button class="save sub" data-act="close">閉じる</button>
   ` : `
-    <h3>設定</h3>
-    <div class="field"><label>あなたの名前</label>
-      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
+    <h3>2台で共有する設定</h3>
+    <p class="hint">
+      <b>① Firebase Console を開く</b><br>
+      console.firebase.google.com → プロジェクト「kiamono1」を選択<br><br>
+      <b>② Realtime Database を作成</b><br>
+      左メニュー「Realtime Database」→「データベースを作成」→ テストモード → 完了<br><br>
+      <b>③ URLをコピーして下に貼り付け</b><br>
+      作成後に表示されるURLをコピー
+    </p>
+    <div class="urlhint">URLの例：<code>https://kiamono1-default-rtdb.asia-southeast1.firebasedatabase.app</code></div>
+    <div class="field"><label>Firebase Realtime Database URL</label>
+      <input id="dbUrlIn" type="url" value="${esc(DB_URL)}"
+             placeholder="https://xxx-default-rtdb.xxx.firebasedatabase.app"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="field"><label>ルームID（2台で同じにする）</label>
+      <input id="roomIn" value="${esc(ROOM)}" placeholder="ouchi"
              autocomplete="off" autocorrect="off" autocapitalize="off"></div>
-    <div class="syncbox">
-      <div class="syncrow"><span>同期</span><span class="sv">この端末だけ</span></div>
-    </div>
-    <p class="hint">ルームを作成してコードをパートナーに送り、パートナーがそのコードで参加すると2台でリストが共有されます。</p>
-    <button class="save" id="createBtn">ルームを作成する（最初の1人）</button>
-    <div class="divider">― または ―</div>
-    <div class="field"><label>パートナーのルームコードで参加</label>
-      <input id="joinInput" placeholder="ルームコードを入力"
-             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
-             style="margin-bottom:8px;">
-      <button class="save" id="joinBtn">参加する</button>
-    </div>
+    <button class="save" id="startBtn">同期を開始</button>
+    <div class="field" style="margin-top:8px;"><label>あなたの名前（任意）</label>
+      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off"></div>
     <button class="save sub" data-act="close">閉じる</button>
   `);
 
-  const m = document.getElementById("meName");
+  const m=document.getElementById("meName");
   if(m) m.addEventListener("input",()=>{ meName=m.value.trim(); localStorage.setItem("kaimono_me",meName); });
 
-  /* ルーム作成 */
-  document.getElementById("createBtn")?.addEventListener("click", async ()=>{
-    const btn = document.getElementById("createBtn");
-    btn.textContent="作成中…"; btn.disabled=true;
+  document.getElementById("startBtn")?.addEventListener("click",async ()=>{
+    const url=(document.getElementById("dbUrlIn").value||"").trim().replace(/\/+$/,"");
+    const room=(document.getElementById("roomIn").value||"").trim()||"ouchi";
+    if(!url||!url.startsWith("https://")){ alert("URLを入力してください。"); return; }
+    const btn=document.getElementById("startBtn");
+    btn.textContent="接続確認中…"; btn.disabled=true;
+    /* 接続テスト */
     try{
-      const id = await createRoom();
-      roomId = id; localStorage.setItem("kaimono_room", id);
-      await push();
+      const testUrl=`${url}/rooms/${room}/list.json`;
+      const r=await fetch(testUrl);
+      if(!r.ok) throw new Error(r.status);
+      DB_URL=url; ROOM=room;
+      localStorage.setItem("kaimono_db_url",url);
+      localStorage.setItem("kaimono_room",room);
       startSync();
       closeSheet();
-      setTimeout(()=>$("gear").click(), 350); // 同期中画面を再表示
     }catch(e){
+      btn.textContent="接続失敗 — URLを確認してください";
+      btn.disabled=false;
       console.error(e);
-      btn.textContent="作成に失敗しました（ネット確認）"; btn.disabled=false;
     }
   });
 
-  /* コードで参加 */
-  document.getElementById("joinBtn")?.addEventListener("click", async ()=>{
-    const code = document.getElementById("joinInput").value.trim();
-    if(!code){ alert("ルームコードを入力してください。"); return; }
-    const btn = document.getElementById("joinBtn");
-    btn.textContent="接続中…"; btn.disabled=true;
-    try{
-      roomId = code; localStorage.setItem("kaimono_room", code);
-      remoteAt = 0;
-      await pull();
-      startSync();
-      closeSheet();
-      setTimeout(()=>$("gear").click(), 350);
-    }catch(e){
-      console.error(e);
-      btn.textContent="接続失敗（コードを確認）"; btn.disabled=false;
-    }
-  });
-
-  /* コピー */
-  document.getElementById("copyBtn")?.addEventListener("click", ()=>{
-    navigator.clipboard?.writeText(roomId).then(()=>{
-      const b=document.getElementById("copyBtn");
-      b.textContent="コピーしました ✓";
-      setTimeout(()=>{ b.textContent="ルームコードをコピー"; },2000);
-    }).catch(()=> alert("コード: "+roomId));
-  });
-
-  /* 同期解除 */
-  document.getElementById("stopBtn")?.addEventListener("click", ()=>{
+  document.getElementById("stopBtn")?.addEventListener("click",()=>{
     if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){
       stopSync();
-      localStorage.removeItem("kaimono_room");
-      roomId="";
-      closeSheet();
+      localStorage.removeItem("kaimono_db_url");
+      DB_URL=""; closeSheet();
     }
   });
 
-  sheet.querySelector('[data-act="close"]')?.addEventListener("click", closeSheet);
+  sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
 });
 
 /* ===== 起動 ===== */
 loadLocal();
-if (roomId){ startSync(); } else { renderList(); }
+if(DB_URL){ startSync(); }else{ renderList(); }
 </script>
 </body>
 </html>
