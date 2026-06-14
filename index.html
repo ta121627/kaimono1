@@ -39,16 +39,18 @@ button{cursor:pointer;}
 }
 .navtitle{font-size:17px;font-weight:600;opacity:0;transition:opacity .25s ease;height:44px;line-height:44px;}
 .navbar.scrolled .navtitle{opacity:1;}
-.gear{
-  position:absolute;right:12px;top:calc(env(safe-area-inset-top) + 4px);
+.navbtn{
+  position:absolute;top:calc(env(safe-area-inset-top) + 4px);
   width:36px;height:36px;border:none;border-radius:50%;
   background:#FFFFFF;color:#FF3B81;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 1px 4px rgba(214,51,108,0.10),0 4px 12px rgba(214,51,108,0.08);
   transition:transform .12s ease,background .12s ease;
 }
-.gear:active{transform:scale(0.9);background:#FFF0F4;}
-.gear svg{width:18px;height:18px;display:block;}
+.navbtn:active{transform:scale(0.9);background:#FFF0F4;}
+.navbtn svg{width:18px;height:18px;display:block;}
+.gear{right:12px;}
+.sharebtn{left:12px;}
 
 .hero{padding:4px 20px 10px;}
 .hero h1{font-size:31px;font-weight:700;letter-spacing:-0.5px;}
@@ -104,11 +106,22 @@ button{cursor:pointer;}
 .plus{width:46px;height:46px;flex:0 0 auto;border:none;border-radius:50%;background:#FF3B81;color:#fff;font-size:26px;line-height:46px;font-weight:300;box-shadow:0 4px 14px rgba(255,59,129,0.45);transition:transform .12s ease,background .12s ease;}
 .plus:active{transform:scale(0.92);background:#E62E70;}
 
+/* トースト */
+.toast{
+  position:fixed;top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-8px);
+  background:rgba(28,28,30,0.88);color:#fff;
+  padding:10px 18px;border-radius:20px;font-size:14px;font-weight:500;
+  pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;z-index:200;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* シート */
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s ease;}
 .overlay.show{opacity:1;pointer-events:auto;}
 .sheet{width:100%;background:#FFFFFF;border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow-y:auto;}
 .overlay.show .sheet{transform:translateY(0);}
-.sheet h3{font-size:19px;font-weight:700;text-align:center;margin-bottom:16px;}
+.sheet h3{font-size:19px;font-weight:700;text-align:center;margin-bottom:4px;}
+.sheet .sheetdesc{font-size:13px;color:#A8949D;text-align:center;margin-bottom:16px;}
 .field{margin-bottom:14px;}
 .field label{font-size:12px;color:#A8949D;font-weight:600;display:block;margin-bottom:6px;padding-left:2px;}
 .field input{width:100%;border:none;background:#FFF0F4;border-radius:12px;padding:13px 15px;font-size:15px;outline:none;color:#1C1C1E;}
@@ -119,13 +132,15 @@ button{cursor:pointer;}
 .syncrow .sv{color:#A8949D;}
 .syncbox.on .syncrow .sv{color:#E62E70;font-weight:600;}
 .hint{font-size:13px;color:#5A4A52;line-height:1.65;margin-bottom:14px;padding:0 2px;}
-.hint b{color:#FF3B81;}
-.save{width:100%;border:none;background:#FF3B81;color:#fff;border-radius:13px;padding:14px;font-size:17px;font-weight:600;}
+.save{width:100%;border:none;background:#FF3B81;color:#fff;border-radius:13px;padding:14px;font-size:17px;font-weight:600;margin-bottom:0;}
 .save:active{background:#E62E70;}
 .save.sub{background:transparent;color:#A8949D;font-size:15px;padding:10px;}
+.save.ghost{background:#FFF0F4;color:#FF3B81;font-size:15px;}
+.save.ghost:active{background:#FFE0EC;}
 .save.danger{background:#FF3B30;}
 .save.danger:active{background:#D4291F;}
 .save:disabled{opacity:.5;}
+.gap{height:10px;}
 .urlhint{background:#FFF0F4;border-radius:10px;padding:10px 13px;font-size:12px;color:#A8949D;margin-bottom:14px;line-height:1.6;}
 .urlhint code{color:#E62E70;font-family:monospace;word-break:break-all;}
 
@@ -135,8 +150,18 @@ button{cursor:pointer;}
 <body>
 
 <div class="navbar" id="navbar">
+  <!-- 共有ボタン（左） -->
+  <button class="navbtn sharebtn" id="shareBtn" aria-label="共有">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
+  </button>
   <span class="navtitle">買い物チェックリスト</span>
-  <button class="gear" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+  <!-- 設定ボタン（右） -->
+  <button class="navbtn gear" id="gear" aria-label="設定">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </button>
 </div>
 
 <div class="hero">
@@ -152,13 +177,14 @@ button{cursor:pointer;}
   <button class="plus" id="addBtn" aria-label="追加">＋</button>
 </div>
 
+<div id="toast" class="toast"></div>
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
 
 <script>
-/* ===== 設定読み込み ===== */
-let DB_URL  = localStorage.getItem("kaimono_db_url") || "";
-let ROOM    = localStorage.getItem("kaimono_room")   || "ouchi";
-let meName  = localStorage.getItem("kaimono_me")     || "";
+/* ===== 設定 ===== */
+let DB_URL = localStorage.getItem("kaimono_db_url") || "";
+let ROOM   = localStorage.getItem("kaimono_room")   || "ouchi";
+let meName = localStorage.getItem("kaimono_me")     || "";
 
 let items = [], CLOUD = false, evSource = null, syncTimer = null;
 let remoteAt = 0, suppressTap = false, sw = null;
@@ -168,17 +194,57 @@ const list = $("list"), overlay = $("overlay"), sheet = $("sheet");
 const esc = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-/* ===== Firebase Realtime Database REST ===== */
-function rtdbUrl(){ return `${DB_URL.replace(/\/+$/,"")}/rooms/${ROOM}/list.json`; }
+/* ===== トースト ===== */
+let toastTimer;
+function toast(msg){
+  const el=$("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),2200);
+}
 
-async function rtdbGet(){
-  const r = await fetch(rtdbUrl()); if(!r.ok) throw new Error(r.status);
-  return r.json();
+/* ===== URL共有（アカウント不要） ===== */
+function encodeList(){
+  const data={v:1,items:items.filter(i=>!i._del),at:Date.now()};
+  return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
 }
-async function rtdbPut(data){
-  const r = await fetch(rtdbUrl(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
-  if(!r.ok) throw new Error(r.status);
+function decodeList(str){
+  return JSON.parse(decodeURIComponent(escape(atob(str))));
 }
+function makeShareUrl(){
+  return `${location.origin}${location.pathname}?s=${encodeList()}`;
+}
+async function shareList(){
+  if(items.filter(i=>!i._del).length===0){ toast("リストが空です"); return; }
+  const url = makeShareUrl();
+  if(navigator.share){
+    try{ await navigator.share({title:"買い物チェックリスト",url}); }
+    catch(e){ if(e.name!=="AbortError") fallbackCopy(url); }
+  } else { fallbackCopy(url); }
+}
+async function fallbackCopy(url){
+  try{ await navigator.clipboard.writeText(url); toast("リンクをコピーしました"); }
+  catch(e){ prompt("このURLをコピーして送ってください",url); }
+}
+
+/* 起動時にURLパラメータをチェックして読み込み */
+function checkUrlImport(){
+  const p=new URLSearchParams(location.search);
+  const s=p.get("s"); if(!s) return;
+  try{
+    const data=decodeList(s);
+    if(!data.items) return;
+    // 現在のリストとマージ
+    items=mergeItems(data.items);
+    saveLocal(); renderList();
+    toast("リストを読み込みました");
+  }catch(e){ console.warn("URL import failed",e); }
+  // URLをきれいにする
+  history.replaceState(null,"",location.pathname);
+}
+
+/* ===== Firebase Realtime Database REST（オプション） ===== */
+function rtdbUrl(){ return `${DB_URL.replace(/\/+$/,"")}/rooms/${ROOM}/list.json`; }
+async function rtdbGet(){ const r=await fetch(rtdbUrl()); if(!r.ok)throw new Error(r.status); return r.json(); }
+async function rtdbPut(data){ const r=await fetch(rtdbUrl(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok)throw new Error(r.status); }
 
 function mergeItems(remoteItems){
   const byId={};
@@ -186,50 +252,25 @@ function mergeItems(remoteItems){
   for(const li of items){ if(!byId[li.id]||(li.at||0)>(byId[li.id].at||0)) byId[li.id]=li; }
   return Object.values(byId).filter(i=>!i._del||(Date.now()-(i._delAt||0))<300000);
 }
-
 function applyRemote(data){
-  if(!data||!data.items) return;
-  if(data.at<=remoteAt) return;
-  remoteAt=data.at;
-  items=mergeItems(data.items);
-  saveLocal(); renderList();
+  if(!data||!data.items||data.at<=remoteAt) return;
+  remoteAt=data.at; items=mergeItems(data.items); saveLocal(); renderList();
 }
-
 async function syncWrite(){
   if(!CLOUD||!DB_URL) return;
   try{ await rtdbPut({at:Date.now(),items}); }catch(e){ console.warn("push failed",e); }
 }
-
 function startSync(){
   CLOUD=true;
   rtdbGet().then(applyRemote).catch(e=>console.warn("initial pull failed",e));
-  /* Server-Sent Events でリアルタイム受信（失敗したらポーリングに切替） */
   try{
-    evSource = new EventSource(rtdbUrl());
-    evSource.addEventListener("put", e=>{
-      try{ applyRemote(JSON.parse(e.data).data); }catch(_){}
-    });
-    evSource.onerror = ()=>{
-      evSource.close(); evSource=null;
-      if(!syncTimer) syncTimer=setInterval(()=>{
-        rtdbGet().then(applyRemote).catch(()=>{});
-      },5000);
-    };
-  }catch(e){
-    syncTimer=setInterval(()=>{ rtdbGet().then(applyRemote).catch(()=>{}); },5000);
-  }
+    evSource=new EventSource(rtdbUrl());
+    evSource.addEventListener("put",e=>{ try{ applyRemote(JSON.parse(e.data).data); }catch(_){} });
+    evSource.onerror=()=>{ evSource.close(); evSource=null; if(!syncTimer) syncTimer=setInterval(()=>rtdbGet().then(applyRemote).catch(()=>{}),5000); };
+  }catch(e){ syncTimer=setInterval(()=>rtdbGet().then(applyRemote).catch(()=>{}),5000); }
 }
-
-function stopSync(){
-  CLOUD=false;
-  if(evSource){ evSource.close(); evSource=null; }
-  clearInterval(syncTimer); syncTimer=null;
-}
-
-document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible"&&CLOUD)
-    rtdbGet().then(applyRemote).catch(()=>{});
-});
+function stopSync(){ CLOUD=false; if(evSource){evSource.close();evSource=null;} clearInterval(syncTimer);syncTimer=null; }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&CLOUD) rtdbGet().then(applyRemote).catch(()=>{}); });
 
 /* ===== ローカル ===== */
 function loadLocal(){ try{ items=JSON.parse(localStorage.getItem("kaimono_items"))||[]; }catch(e){ items=[]; } }
@@ -241,20 +282,20 @@ function addItem(name){
   items.push(it); saveLocal(); renderList({enterId:it.id}); syncWrite();
 }
 function toggle(id){
-  const it=items.find(x=>x.id===id); if(!it) return;
+  const it=items.find(x=>x.id===id); if(!it)return;
   it.checked=!it.checked; it.checkedAt=it.checked?Date.now():0; it.at=Date.now();
   saveLocal(); renderList({toggledId:id}); syncWrite();
 }
 function removeItem(id){
   const it=items.find(x=>x.id===id);
-  if(it&&CLOUD){ it._del=true; it._delAt=Date.now(); it.at=Date.now(); }
-  else{ items=items.filter(x=>x.id!==id); }
+  if(it&&CLOUD){it._del=true;it._delAt=Date.now();it.at=Date.now();}
+  else{items=items.filter(x=>x.id!==id);}
   saveLocal(); renderList(); syncWrite();
 }
 function clearCompleted(){
   const now=Date.now();
-  if(CLOUD){ items.filter(i=>i.checked).forEach(i=>{ i._del=true; i._delAt=now; i.at=now; }); }
-  else{ items=items.filter(i=>!i.checked); }
+  if(CLOUD){items.filter(i=>i.checked).forEach(i=>{i._del=true;i._delAt=now;i.at=now;});}
+  else{items=items.filter(i=>!i.checked);}
   saveLocal(); renderList(); syncWrite();
 }
 
@@ -280,10 +321,9 @@ function cellHTML(i,opts){
     </div>
   </div>`;
 }
-
 function renderList(opts={}){
   const old={};
-  list.querySelectorAll(".cell").forEach(c=>{ old[c.dataset.id]=c.getBoundingClientRect().top; });
+  list.querySelectorAll(".cell").forEach(c=>{old[c.dataset.id]=c.getBoundingClientRect().top;});
   const arr=sorted();
   const left=arr.filter(i=>!i.checked).length;
   $("sub").textContent=arr.length===0?"リストはまだ空です":(left>0?`あと ${left} 個`:"全部そろいました 🎉");
@@ -299,152 +339,157 @@ function renderList(opts={}){
       const id=c.dataset.id;
       if(old[id]!==undefined){
         const dy=old[id]-c.getBoundingClientRect().top;
-        if(dy){ c.style.transition="none"; c.style.transform=`translateY(${dy}px)`;
-          requestAnimationFrame(()=>{ c.style.transition="transform .36s cubic-bezier(.2,.8,.2,1)"; c.style.transform=""; }); }
+        if(dy){c.style.transition="none";c.style.transform=`translateY(${dy}px)`;
+          requestAnimationFrame(()=>{c.style.transition="transform .36s cubic-bezier(.2,.8,.2,1)";c.style.transform="";});}
       }
     });
     if(opts.toggledId){
       const chk=list.querySelector(`.cell[data-id="${opts.toggledId}"] .check`);
-      if(chk){ chk.classList.add("pop"); setTimeout(()=>chk.classList.remove("pop"),380); }
+      if(chk){chk.classList.add("pop");setTimeout(()=>chk.classList.remove("pop"),380);}
     }
   });
 }
 
 /* ===== スワイプ削除 ===== */
-function currentTX(el){ const m=/translateX\(([-0-9.]+)px\)/.exec(el.style.transform||""); return m?parseFloat(m[1]):0; }
-function closeOthers(except){
-  list.querySelectorAll(".row").forEach(r=>{
-    if(r!==except&&currentTX(r)!==0){ r.style.transition="transform .25s ease"; r.style.transform="translateX(0)"; }
-  });
-}
-list.addEventListener("pointerdown",e=>{ const row=e.target.closest(".row"); if(!row)return; sw={row,startX:e.clientX,startY:e.clientY,locked:null,base:currentTX(row)}; });
+function currentTX(el){const m=/translateX\(([-0-9.]+)px\)/.exec(el.style.transform||"");return m?parseFloat(m[1]):0;}
+function closeOthers(except){list.querySelectorAll(".row").forEach(r=>{if(r!==except&&currentTX(r)!==0){r.style.transition="transform .25s ease";r.style.transform="translateX(0)";}});}
+list.addEventListener("pointerdown",e=>{const row=e.target.closest(".row");if(!row)return;sw={row,startX:e.clientX,startY:e.clientY,locked:null,base:currentTX(row)};});
 list.addEventListener("pointermove",e=>{
   if(!sw)return;
   const dx=e.clientX-sw.startX,dy=e.clientY-sw.startY;
   if(sw.locked===null){
-    if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){ sw.locked="h"; try{sw.row.setPointerCapture(e.pointerId);}catch(_){} }
-    else if(Math.abs(dy)>8){ sw.locked="v"; }
+    if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){sw.locked="h";try{sw.row.setPointerCapture(e.pointerId);}catch(_){}}
+    else if(Math.abs(dy)>8){sw.locked="v";}
   }
-  if(sw.locked==="h"){ sw.row.style.transition="none"; sw.row.style.transform=`translateX(${Math.max(-76,Math.min(0,sw.base+dx))}px)`; e.preventDefault(); }
+  if(sw.locked==="h"){sw.row.style.transition="none";sw.row.style.transform=`translateX(${Math.max(-76,Math.min(0,sw.base+dx))}px)`;e.preventDefault();}
 });
 function endSwipe(){
   if(!sw)return;
   if(sw.locked==="h"){
     const open=currentTX(sw.row)<=-38;
-    sw.row.style.transition="transform .25s ease"; sw.row.style.transform=`translateX(${open?-72:0}px)`;
-    closeOthers(open?sw.row:null); suppressTap=true; setTimeout(()=>suppressTap=false,60);
+    sw.row.style.transition="transform .25s ease";sw.row.style.transform=`translateX(${open?-72:0}px)`;
+    closeOthers(open?sw.row:null);suppressTap=true;setTimeout(()=>suppressTap=false,60);
   }
   sw=null;
 }
-list.addEventListener("pointerup",endSwipe); list.addEventListener("pointercancel",endSwipe);
+list.addEventListener("pointerup",endSwipe);list.addEventListener("pointercancel",endSwipe);
 
 /* ===== タップ ===== */
 function doDelete(id){
   const cell=list.querySelector(`.cell[data-id="${id}"]`);
-  if(cell){ cell.style.height=cell.offsetHeight+"px"; cell.getBoundingClientRect(); cell.style.overflow="hidden"; cell.style.transition="height .25s ease,opacity .25s ease"; cell.style.height="0px"; cell.style.opacity="0"; setTimeout(()=>removeItem(id),240); }
+  if(cell){cell.style.height=cell.offsetHeight+"px";cell.getBoundingClientRect();cell.style.overflow="hidden";cell.style.transition="height .25s ease,opacity .25s ease";cell.style.height="0px";cell.style.opacity="0";setTimeout(()=>removeItem(id),240);}
   else removeItem(id);
 }
 list.addEventListener("click",e=>{
-  const t=e.target.closest("[data-act]"); if(!t)return;
+  const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act,id=t.dataset.id;
-  if(act==="del"){ doDelete(id); return; }
-  if(act==="clear"){ clearCompleted(); return; }
+  if(act==="del"){doDelete(id);return;}
+  if(act==="clear"){clearCompleted();return;}
   if(act==="tap"){
     if(suppressTap)return;
     const row=list.querySelector(`.row[data-id="${id}"]`);
-    if(row&&currentTX(row)<=-10){ row.style.transition="transform .25s ease"; row.style.transform="translateX(0)"; return; }
+    if(row&&currentTX(row)<=-10){row.style.transition="transform .25s ease";row.style.transform="translateX(0)";return;}
     toggle(id);
   }
 });
 
 /* ===== 追加バー ===== */
-function quickAdd(){ const inp=$("inp"),v=inp.value.trim(); if(!v)return; addItem(v); inp.value=""; inp.focus(); }
+function quickAdd(){const inp=$("inp"),v=inp.value.trim();if(!v)return;addItem(v);inp.value="";inp.focus();}
 $("addBtn").addEventListener("click",quickAdd);
-$("inp").addEventListener("keydown",e=>{ if(e.key==="Enter")quickAdd(); });
+$("inp").addEventListener("keydown",e=>{if(e.key==="Enter")quickAdd();});
+window.addEventListener("scroll",()=>{$("navbar").classList.toggle("scrolled",window.scrollY>30);},{passive:true});
 
-window.addEventListener("scroll",()=>{ $("navbar").classList.toggle("scrolled",window.scrollY>30); },{passive:true});
+/* ===== 共有ボタン ===== */
+$("shareBtn").addEventListener("click", shareList);
 
 /* ===== 設定シート ===== */
-function openSheet(html){ sheet.innerHTML=html; overlay.classList.add("show"); }
-function closeSheet(){ overlay.classList.remove("show"); }
-overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
+function openSheet(html){sheet.innerHTML=html;overlay.classList.add("show");}
+function closeSheet(){overlay.classList.remove("show");}
+overlay.addEventListener("click",e=>{if(e.target===overlay)closeSheet();});
 
 $("gear").addEventListener("click",()=>{
-  openSheet(CLOUD ? `
+  openSheet(`
     <h3>設定</h3>
     <div class="field"><label>あなたの名前</label>
-      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off"></div>
-    <div class="syncbox on">
-      <div class="syncrow"><span>同期</span><span class="sv">クラウド同期中 ✓</span></div>
-      <div class="syncrow"><span>ルームID</span><span class="sv">${esc(ROOM)}</span></div>
-    </div>
-    <p class="hint">リアルタイムで同期しています。<br>パートナーも同じ設定（URLとルームID）を入力すれば2台で共有できます。</p>
-    <button class="save danger" id="stopBtn">同期を解除</button>
-    <button class="save sub" data-act="close">閉じる</button>
-  ` : `
-    <h3>2台で共有する設定</h3>
-    <p class="hint">
-      <b>① Firebase Console を開く</b><br>
-      console.firebase.google.com → プロジェクト「kiamono1」を選択<br><br>
-      <b>② Realtime Database を作成</b><br>
-      左メニュー「Realtime Database」→「データベースを作成」→ テストモード → 完了<br><br>
-      <b>③ URLをコピーして下に貼り付け</b><br>
-      作成後に表示されるURLをコピー
-    </p>
-    <div class="urlhint">URLの例：<code>https://kiamono1-default-rtdb.asia-southeast1.firebasedatabase.app</code></div>
-    <div class="field"><label>Firebase Realtime Database URL</label>
-      <input id="dbUrlIn" type="url" value="${esc(DB_URL)}"
-             placeholder="https://xxx-default-rtdb.xxx.firebasedatabase.app"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
-    <div class="field"><label>ルームID（2台で同じにする）</label>
-      <input id="roomIn" value="${esc(ROOM)}" placeholder="ouchi"
+      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
              autocomplete="off" autocorrect="off" autocapitalize="off"></div>
-    <button class="save" id="startBtn">同期を開始</button>
-    <div class="field" style="margin-top:8px;"><label>あなたの名前（任意）</label>
-      <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off"></div>
+
+    <div class="syncbox ${CLOUD?'on':''}">
+      <div class="syncrow"><span>リアルタイム同期</span><span class="sv">${CLOUD?'同期中 ✓':'オフ'}</span></div>
+    </div>
+
+    ${CLOUD ? `
+      <button class="save danger" id="stopBtn">リアルタイム同期を解除</button>
+      <div class="gap"></div>
+    ` : `
+      <p class="hint">左上の <strong>共有ボタン</strong> でリストをLINEなどで送れます。受け取った側がリンクを開くと自動で読み込まれます。<br><br>
+      両方の画面に <strong>リアルタイム</strong> で反映させたい場合は、Firebase Realtime DatabaseのURLを設定してください。</p>
+      <button class="save ghost" id="rtdbSetupBtn">リアルタイム同期を設定する</button>
+      <div class="gap"></div>
+    `}
     <button class="save sub" data-act="close">閉じる</button>
   `);
 
   const m=document.getElementById("meName");
-  if(m) m.addEventListener("input",()=>{ meName=m.value.trim(); localStorage.setItem("kaimono_me",meName); });
+  if(m) m.addEventListener("input",()=>{meName=m.value.trim();localStorage.setItem("kaimono_me",meName);});
 
-  document.getElementById("startBtn")?.addEventListener("click",async ()=>{
-    const url=(document.getElementById("dbUrlIn").value||"").trim().replace(/\/+$/,"");
-    const room=(document.getElementById("roomIn").value||"").trim()||"ouchi";
-    if(!url||!url.startsWith("https://")){ alert("URLを入力してください。"); return; }
-    const btn=document.getElementById("startBtn");
-    btn.textContent="接続確認中…"; btn.disabled=true;
-    /* 接続テスト */
-    try{
-      const testUrl=`${url}/rooms/${room}/list.json`;
-      const r=await fetch(testUrl);
-      if(!r.ok) throw new Error(r.status);
-      DB_URL=url; ROOM=room;
-      localStorage.setItem("kaimono_db_url",url);
-      localStorage.setItem("kaimono_room",room);
-      startSync();
-      closeSheet();
-    }catch(e){
-      btn.textContent="接続失敗 — URLを確認してください";
-      btn.disabled=false;
-      console.error(e);
-    }
+  document.getElementById("rtdbSetupBtn")?.addEventListener("click",()=>{
+    openSheet(`
+      <h3>リアルタイム同期の設定</h3>
+      <p class="sheetdesc">Firebase Realtime Database URLを貼り付けると<br>自動でリアルタイム同期が始まります</p>
+      <p class="hint">
+        <strong>① Firebase Console を開く</strong><br>
+        console.firebase.google.com → プロジェクトを選択<br><br>
+        <strong>② Realtime Databaseを作成</strong><br>
+        左メニュー「Realtime Database」→「データベースを作成」→ テストモード → 完了<br><br>
+        <strong>③ 表示されたURLをコピーして下に貼り付け</strong>
+      </p>
+      <div class="urlhint">URLの例：<code>https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app</code></div>
+      <div class="field"><label>Database URL</label>
+        <input id="dbUrlIn" type="url" value="${esc(DB_URL)}"
+               placeholder="https://xxx-default-rtdb.xxx.firebasedatabase.app"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label>ルームID（2台で同じにする）</label>
+        <input id="roomIn" value="${esc(ROOM)}" placeholder="ouchi"
+               autocomplete="off" autocorrect="off" autocapitalize="off"></div>
+      <button class="save" id="startBtn">同期を開始</button>
+      <div class="gap"></div>
+      <button class="save sub" data-act="close">閉じる</button>
+    `);
+    document.getElementById("startBtn")?.addEventListener("click",async()=>{
+      const url=(document.getElementById("dbUrlIn").value||"").trim().replace(/\/+$/,"");
+      const room=(document.getElementById("roomIn").value||"").trim()||"ouchi";
+      if(!url||!url.startsWith("https://")){alert("URLを入力してください。");return;}
+      const btn=document.getElementById("startBtn");
+      btn.textContent="接続確認中…";btn.disabled=true;
+      try{
+        const r=await fetch(`${url}/rooms/${room}/list.json`);
+        if(!r.ok)throw new Error(r.status);
+        DB_URL=url;ROOM=room;
+        localStorage.setItem("kaimono_db_url",url);
+        localStorage.setItem("kaimono_room",room);
+        startSync();closeSheet();toast("リアルタイム同期を開始しました");
+      }catch(e){
+        btn.textContent="接続失敗 — URLを確認してください";btn.disabled=false;
+        console.error(e);
+      }
+    });
+    sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
   });
 
   document.getElementById("stopBtn")?.addEventListener("click",()=>{
-    if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){
-      stopSync();
-      localStorage.removeItem("kaimono_db_url");
-      DB_URL=""; closeSheet();
+    if(confirm("リアルタイム同期を解除します。")){
+      stopSync();localStorage.removeItem("kaimono_db_url");DB_URL="";
+      closeSheet();toast("同期を解除しました");
     }
   });
-
   sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
 });
 
 /* ===== 起動 ===== */
 loadLocal();
-if(DB_URL){ startSync(); }else{ renderList(); }
+checkUrlImport();          // URLパラメータから読み込み
+if(DB_URL){startSync();}else{renderList();}
 </script>
 </body>
 </html>
