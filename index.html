@@ -54,9 +54,17 @@ input,button{font-family:inherit;}button{cursor:pointer;}
 .home-empty .t{font-size:17px;font-weight:600;color:#8A7680;}
 .home-empty .d{font-size:14px;margin-top:5px;}
 
-/* FAB（ホーム画面固定ボタン） */
-.fab{position:fixed;right:20px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:40;width:56px;height:56px;border:none;border-radius:50%;background:#FF3B81;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(255,59,129,.50);transition:transform .12s,background .12s;}
-.fab:active{transform:scale(.92);background:#E62E70;}
+/* ホーム画面：下部バー */
+.home-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(255,245,248,.92);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:0.5px solid #F0DCE4;}
+.home-new-btn{width:100%;border:none;border-radius:13px;padding:14px;background:#FF3B81;color:#fff;font-size:17px;font-weight:600;box-shadow:0 4px 14px rgba(255,59,129,.30);transition:background .12s;}
+.home-new-btn:active{background:#E62E70;}
+.archive-link{width:100%;border:none;background:transparent;color:#A8949D;font-size:14px;padding:5px;margin-bottom:2px;display:none;}
+.archive-link.has-items{display:block;}
+.archive-link:active{color:#FF3B81;}
+/* カード内 日付 */
+.lcard-meta{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+.lcard-count{font-size:13px;color:#A8949D;}
+.lcard-date{font-size:12px;color:#C9B8C0;}
 
 /* リスト画面 */
 body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
@@ -144,10 +152,11 @@ body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
   <div class="lists-wrap" id="listsWrap"></div>
   <div style="height:calc(90px + env(safe-area-inset-bottom))"></div>
 
-  <!-- FAB -->
-  <button class="fab" id="fabBtn" aria-label="新しいリストを作成">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
+  <!-- ホーム下部バー -->
+  <div class="home-bar">
+    <button class="archive-link" id="archiveBtn">📦 アーカイブを見る（<span id="archiveCnt">0</span>件）</button>
+    <button class="home-new-btn" id="fabBtn">＋　新しいリストを作成</button>
+  </div>
 </div>
 
 <!-- リスト画面 -->
@@ -273,6 +282,19 @@ function toggle(id){
   const it=l.items.find(x=>x.id===id); if(!it) return;
   it.checked=!it.checked; it.checkedAt=it.checked?Date.now():0; it.at=Date.now(); l.at=Date.now();
   saveLocal(); renderList({toggledId:id}); mqttPublish();
+  if(it.checked) checkAutoArchive();
+}
+function checkAutoArchive(){
+  const l=currentList(); if(!l||l.archived) return;
+  const vis=l.items.filter(i=>!i._del);
+  if(vis.length>0&&vis.every(i=>i.checked)){
+    setTimeout(()=>{
+      l.archived=true; l.archivedAt=Date.now(); l.at=Date.now();
+      saveLocal(); mqttPublish();
+      toast("全部完了！アーカイブに移動しました ✓");
+      setTimeout(goHome,1000);
+    },600);
+  }
 }
 function removeItem(id){
   const l=currentList(); if(!l) return;
@@ -332,25 +354,32 @@ function renderList(opts={}){
   });
 }
 
+/* 日付フォーマット */
+function fmtDate(ts){ const d=new Date(ts||Date.now()); return `${d.getMonth()+1}/${d.getDate()}`; }
+
 /* 描画：ホーム画面 */
 function renderHome(){
-  const visible=lists.filter(l=>!l._del);
-  $("homeSub").textContent=visible.length===0?"リストを作成しましょう":`${visible.length}件のリスト`;
-  if(visible.length===0){
-    listsWrap.innerHTML=`<div class="home-empty"><div class="em">📋</div><div class="t">リストがありません</div><div class="d">右下の＋ボタンで作成できます</div></div>`;
+  const active=lists.filter(l=>!l._del&&!l.archived);
+  const archived=lists.filter(l=>!l._del&&l.archived);
+  // アーカイブリンク
+  const ab=$("archiveBtn"); if(ab){ $("archiveCnt").textContent=archived.length; ab.classList.toggle("has-items",archived.length>0); }
+  $("homeSub").textContent=active.length===0?"リストを作成しましょう":`${active.length}件のリスト`;
+  if(active.length===0){
+    listsWrap.innerHTML=`<div class="home-empty"><div class="em">📋</div><div class="t">リストがありません</div><div class="d">下の＋ボタンで作成できます</div></div>`;
     return;
   }
   let html=`<div class="list-cards-box">`;
-  visible.forEach((l,i)=>{
+  active.forEach((l,i)=>{
     const vis=l.items.filter(x=>!x._del);
     const undone=vis.filter(x=>!x.checked).length;
     const total=vis.length;
     const cnt=total===0?"空":(undone>0?`あと ${undone} 個`:"全部完了 ✓");
+    const date=fmtDate(l.createdAt);
     html+=`<div class="lcard-wrap" data-listid="${l.id}">
       <div class="lcard-delbg"><button class="lcard-delbtn" data-act="listdel" data-listid="${l.id}">削除</button></div>
       <div class="lcard" data-act="openlist" data-listid="${l.id}">
         <div class="lcard-icon">${ICONS[i%ICONS.length]}</div>
-        <div class="lcard-info"><div class="lcard-name">${esc(l.name)}</div><div class="lcard-count">${cnt}</div></div>
+        <div class="lcard-info"><div class="lcard-name">${esc(l.name)}</div><div class="lcard-meta"><span class="lcard-count">${cnt}</span><span class="lcard-date">${date}</span></div></div>
         <svg class="lcard-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
     </div>`;
@@ -460,6 +489,35 @@ $("fabBtn").addEventListener("click",()=>{
     lists.push(l); saveLocal(); mqttPublish(); closeSheet(); openList(l.id);
   });
   sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
+});
+
+/* アーカイブシート */
+$("archiveBtn").addEventListener("click",()=>{
+  const archived=lists.filter(l=>!l._del&&l.archived);
+  if(archived.length===0){toast("アーカイブは空です");return;}
+  let rows=archived.map((l,i)=>{
+    const vis=l.items.filter(x=>!x._del);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:0.5px solid #F2E6EC;">
+      <div style="width:42px;height:42px;border-radius:11px;background:#FFF0F4;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto">${ICONS[i%ICONS.length]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</div>
+        <div style="font-size:13px;color:#A8949D;margin-top:2px">${vis.length}個 · ${fmtDate(l.createdAt)}</div>
+      </div>
+      <button class="btn ghost" style="width:auto;padding:8px 14px;font-size:14px" data-act="restore" data-listid="${l.id}">復元</button>
+    </div>`;
+  }).join("");
+  openSheet(`<h3>アーカイブ</h3><div>${rows}</div><div class="gap"></div><button class="btn sub" data-act="close">閉じる</button>`);
+  sheet.addEventListener("click",function handler(e){
+    const t=e.target.closest("[data-act]"); if(!t) return;
+    if(t.dataset.act==="restore"){
+      const l=lists.find(x=>x.id===t.dataset.listid); if(!l) return;
+      l.archived=false; delete l.archivedAt; l.at=Date.now();
+      saveLocal(); mqttPublish(); closeSheet(); renderHome();
+      toast(`「${l.name}」を復元しました`);
+      sheet.removeEventListener("click",handler);
+    }
+    if(t.dataset.act==="close"){closeSheet();sheet.removeEventListener("click",handler);}
+  });
 });
 
 /* 戻るボタン */
