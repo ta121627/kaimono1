@@ -322,7 +322,7 @@ function checkAutoArchive(){
       l.archived=true; l.archivedAt=Date.now(); l.at=Date.now();
       saveLocal(); mqttPublish();
       toast("全部完了！アーカイブに移動しました ✓");
-      setTimeout(goHome,1000);
+      setTimeout(()=>{ switchTab("archive"); goHome(); },1000);
     },600);
   }
 }
