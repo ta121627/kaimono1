@@ -214,6 +214,7 @@ body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
 <script>
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const ICONS   = ["🛒","📝","🏠","🎁","💊","🍱","🧹","📦","🌸","💄","🍳","🐶"];
+const PURGE_MS = 30*24*60*60*1000; // 削除済みリストは30日間ゴミ箱から復元可能
 
 let lists         = [];
 let currentListId = null;
@@ -255,7 +256,7 @@ function mergeItems(loc,rem){
   const byId={};
   for(const r of rem) byId[r.id]=r;
   for(const l of loc){ if(!byId[l.id]||(l.at||0)>(byId[l.id].at||0)) byId[l.id]=l; }
-  return Object.values(byId).filter(i=>!i._del||(Date.now()-(i._delAt||0))<300000);
+  return Object.values(byId).filter(i=>!i._del||(Date.now()-(i._delAt||0))<PURGE_MS);
 }
 function applyRemote(data){
   if(!data||!Array.isArray(data.lists)) return;
@@ -267,7 +268,7 @@ function applyRemote(data){
     if(!byId[l.id]) byId[l.id]=l;
     else byId[l.id]={...((l.at||0)>(byId[l.id].at||0)?l:byId[l.id]), items:mergeItems(l.items,byId[l.id].items)};
   }
-  lists=Object.values(byId).filter(l=>!l._del||(Date.now()-(l._delAt||0))<300000);
+  lists=Object.values(byId).filter(l=>!l._del||(Date.now()-(l._delAt||0))<PURGE_MS);
   saveLocal();
   if(currentListId){ renderList(); renderSuggestions(); }
   else if(currentTab==="home") renderHome();
@@ -687,16 +688,43 @@ $("syncBtn").addEventListener("click",()=>{
 });
 
 /* 設定 */
+function trashList(){ return lists.filter(l=>l._del); }
+function openTrash(){
+  const trash=trashList();
+  openSheet(`
+    <h3>ゴミ箱</h3>
+    <p class="hint">削除したリストは30日間ここから復元できます。</p>
+    ${trash.length===0?`<p class="hint" style="text-align:center;color:#C2B2BA;">ゴミ箱は空です</p>`:
+      trash.map(l=>`<div class="syncrow" style="align-items:center;">
+        <span>${esc(l.name)}</span>
+        <button class="btn ghost" style="width:auto;padding:8px 14px;font-size:14px;" data-act="trashrestore" data-listid="${l.id}">復元</button>
+      </div>`).join("")}
+    <div class="gap"></div>
+    <button class="btn sub" data-act="close">閉じる</button>
+  `);
+  sheet.querySelectorAll('[data-act="trashrestore"]').forEach(b=>b.addEventListener("click",()=>{
+    const l=lists.find(x=>x.id===b.dataset.listid); if(!l) return;
+    l._del=false; delete l._delAt; l.at=Date.now();
+    saveLocal(); mqttPublish(); closeSheet();
+    if(currentTab==="home") renderHome(); else renderArchive();
+    toast(`「${l.name}」を復元しました`);
+  }));
+  sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
+}
 $("gear").addEventListener("click",()=>{
+  const trashCount=trashList().length;
   openSheet(`
     <h3>設定</h3>
     <div class="field"><label>あなたの名前</label>
       <input id="meName" value="${esc(meName)}" placeholder="自分" maxlength="8"
              autocomplete="off" autocorrect="off" autocapitalize="off"></div>
+    <button class="btn ghost" data-act="opentrash">🗑 ゴミ箱${trashCount>0?`（${trashCount}）`:""}</button>
+    <div class="gap"></div>
     <button class="btn sub" data-act="close">閉じる</button>
   `);
   const m=document.getElementById("meName");
   if(m) m.addEventListener("input",()=>{meName=m.value.trim();localStorage.setItem("kaimono_me",meName);});
+  sheet.querySelector('[data-act="opentrash"]')?.addEventListener("click",openTrash);
   sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
 });
 
