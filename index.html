@@ -319,8 +319,12 @@ function checkAutoArchive(){
   const l=currentList(); if(!l||l.archived) return;
   const vis=l.items.filter(i=>!i._del);
   if(vis.length>0&&vis.every(i=>i.checked)){
+    const listId=l.id;
     setTimeout(()=>{
-      l.archived=true; l.archivedAt=Date.now(); l.at=Date.now();
+      const fresh=lists.find(x=>x.id===listId); if(!fresh||fresh.archived) return;
+      const visNow=fresh.items.filter(i=>!i._del);
+      if(!(visNow.length>0&&visNow.every(i=>i.checked))) return;
+      fresh.archived=true; fresh.archivedAt=Date.now(); fresh.at=Date.now();
       saveLocal(); mqttPublish();
       toast("全部完了！アーカイブに移動しました ✓");
       setTimeout(()=>{ switchTab("archive"); goHome(); },1000);
@@ -729,7 +733,19 @@ $("gear").addEventListener("click",()=>{
 });
 
 /* 起動 */
+function sweepAutoArchive(){
+  let changed=false;
+  for(const l of lists){
+    if(l._del||l.archived) continue;
+    const vis=l.items.filter(i=>!i._del);
+    if(vis.length>0&&vis.every(i=>i.checked)){
+      l.archived=true; l.archivedAt=l.archivedAt||Date.now(); l.at=Date.now(); changed=true;
+    }
+  }
+  if(changed){ saveLocal(); mqttPublish(); }
+}
 loadLocal();
+sweepAutoArchive();
 renderHome();
 if(roomId) startSync();
 </script>
