@@ -215,12 +215,16 @@ body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const ICONS   = ["🛒","📝","🏠","🎁","💊","🍱","🧹","📦","🌸","💄","🍳","🐶"];
 const PURGE_MS = 30*24*60*60*1000; // 削除済みリストは30日間ゴミ箱から復元可能
+const VAPID_PUBLIC_KEY = "BGGyY5DlAifWPx5W3n7Q7hgcp2GKoQaCZavhUqitlyKqxcTWN0aoPdziKs_gZ06tPydyZXIWSbJNu05QuFJWg1k";
 
 let lists         = [];
 let currentListId = null;
 let currentTab    = "home";
 let meName  = localStorage.getItem("kaimono_me")   || "";
 let roomId  = localStorage.getItem("kaimono_room") || "";
+let WORKER_URL = localStorage.getItem("kaimono_worker") || "";
+const deviceId = localStorage.getItem("kaimono_device") || (()=>{ const id=newId(); localStorage.setItem("kaimono_device",id); return id; })();
+let swReg = null;
 let CLOUD   = false, mqttClient = null, remoteAt = 0, lastPublishAt = 0;
 let suppressTap = false, sw  = null;
 let hSuppressTap= false, hsw = null;
@@ -238,6 +242,36 @@ function mqttTopic(){ return `kaimono-app/${roomId}/data`; }
 /* トースト */
 let toastTimer;
 function toast(msg){ const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),2500); }
+
+/* プッシュ通知 */
+function urlB64ToArr(b64){
+  const pad="=".repeat((4-b64.length%4)%4);
+  const raw=atob((b64+pad).replace(/-/g,"+").replace(/_/g,"/"));
+  return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+async function initPush(){
+  if(!("serviceWorker" in navigator)||("PushManager" in window)===false) return;
+  try{ swReg=await navigator.serviceWorker.register("/sw.js",{scope:"/"}); }
+  catch(e){ console.warn("SW登録失敗",e); }
+}
+async function subscribePush(){
+  if(!swReg){ toast("通知はこのブラウザでは使えません"); return; }
+  if(!WORKER_URL){ toast("先にWorkerのURLを設定してください"); return; }
+  if(!roomId){ toast("先に同期ルームを設定してください"); return; }
+  try{
+    await swReg.update();
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){ toast("通知の許可が必要です"); return; }
+    const sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
+    const res=await fetch(`${WORKER_URL}/subscribe`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,deviceId,subscription:sub.toJSON()})});
+    if(res.ok) toast("プッシュ通知を有効にしました 🔔");
+    else toast("通知の登録に失敗しました（URLを確認）");
+  }catch(e){ console.warn("Push subscribe",e); toast("通知の設定に失敗しました"); }
+}
+function notifyPartner(body){
+  if(!WORKER_URL||!roomId) return;
+  fetch(`${WORKER_URL}/notify`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,senderDeviceId:deviceId,payload:JSON.stringify({title:"買い物チェックリスト",body})})}).catch(()=>{});
+}
 
 /* ローカル保存 */
 function loadLocal(){
@@ -263,6 +297,7 @@ function applyRemote(data){
   if((data.at||0)<=remoteAt) return;
   remoteAt=data.at;
   const isOwnEcho=(data.at===lastPublishAt);
+  // 変更前のアイテム数をスナップショット
   const prevItemIds=new Set();
   const prevListIds=new Set(lists.filter(l=>!l._del).map(l=>l.id));
   for(const l of lists) for(const it of l.items) if(!it._del) prevItemIds.add(it.id);
@@ -275,7 +310,9 @@ function applyRemote(data){
   lists=Object.values(byId).filter(l=>!l._del||(Date.now()-(l._delAt||0))<PURGE_MS);
   saveLocal();
   if(!isOwnEcho){
+    // 新しいリストが追加されたか検出
     const newLists=lists.filter(l=>!l._del&&!prevListIds.has(l.id));
+    // 新しいアイテムが追加されたか検出
     let newItemCount=0;
     for(const l of lists) for(const it of l.items) if(!it._del&&!prevItemIds.has(it.id)) newItemCount++;
     if(newLists.length>0&&newItemCount===0){
@@ -322,6 +359,7 @@ function addItem(name){
   const l=currentList(); if(!l) return;
   const it={id:newId(),name,checked:false,addedBy:meName||"",order:Date.now(),checkedAt:0,at:Date.now()};
   l.items.push(it); l.at=Date.now(); saveLocal(); renderList({enterId:it.id}); renderSuggestions(); mqttPublish();
+  notifyPartner(`${meName||"パートナー"}が「${name}」を追加しました`);
 }
 function toggle(id){
   const l=currentList(); if(!l) return;
@@ -628,6 +666,7 @@ $("fabBtn").addEventListener("click",()=>{
     const name=($("newListName")?.value||"").trim()||"新しいリスト";
     const l={id:newId(),name,items:[],createdAt:Date.now(),at:Date.now()};
     lists.push(l); saveLocal(); mqttPublish(); closeSheet(); openList(l.id);
+    notifyPartner(`${meName||"パートナー"}が「${name}」のリストを追加しました`);
   });
   sheet.querySelector('[data-act="close"]')?.addEventListener("click",closeSheet);
 });
@@ -672,6 +711,11 @@ $("syncBtn").addEventListener("click",()=>{
     <div class="field"><label>ルームコード（パートナーに教える）</label><div class="roomcode">${roomId.slice(0,4)}-${roomId.slice(4)}</div></div>
     <button class="btn pink" id="copyBtn">ルームコードをコピー</button>
     <div class="gap"></div>
+    <div class="field"><label>🔔 プッシュ通知 — WorkerのURL</label>
+      <input id="workerUrlInput" value="${esc(WORKER_URL)}" placeholder="https://xxx.workers.dev"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
+    <button class="btn ghost" id="enablePushBtn">通知を有効にする</button>
+    <div class="gap"></div>
     <button class="btn red" id="stopBtn">同期を解除</button>
     <div class="gap"></div>
     <button class="btn sub" data-act="close">閉じる</button>
@@ -708,6 +752,16 @@ $("syncBtn").addEventListener("click",()=>{
   document.getElementById("copyBtn")?.addEventListener("click",()=>{
     const code=roomId.slice(0,4)+"-"+roomId.slice(4);
     navigator.clipboard?.writeText(code).then(()=>toast("コードをコピーしました")).catch(()=>alert("コード: "+code));
+  });
+  document.getElementById("enablePushBtn")?.addEventListener("click",async()=>{
+    const inp=document.getElementById("workerUrlInput");
+    const url=(inp?.value||"").trim().replace(/\/$/,"");
+    if(url){ WORKER_URL=url; localStorage.setItem("kaimono_worker",url); }
+    await subscribePush();
+  });
+  document.getElementById("workerUrlInput")?.addEventListener("input",e=>{
+    const url=e.target.value.trim().replace(/\/$/,"");
+    WORKER_URL=url; localStorage.setItem("kaimono_worker",url);
   });
   document.getElementById("stopBtn")?.addEventListener("click",()=>{
     if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){stopSync();localStorage.removeItem("kaimono_room");roomId="";closeSheet();toast("同期を解除しました");}
@@ -772,6 +826,7 @@ loadLocal();
 sweepAutoArchive();
 renderHome();
 if(roomId) startSync();
+initPush();
 </script>
 </body>
 </html>
