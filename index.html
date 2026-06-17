@@ -221,7 +221,7 @@ let currentListId = null;
 let currentTab    = "home";
 let meName  = localStorage.getItem("kaimono_me")   || "";
 let roomId  = localStorage.getItem("kaimono_room") || "";
-let CLOUD   = false, mqttClient = null, remoteAt = 0;
+let CLOUD   = false, mqttClient = null, remoteAt = 0, lastPublishAt = 0;
 let suppressTap = false, sw  = null;
 let hSuppressTap= false, hsw = null;
 
@@ -262,6 +262,10 @@ function applyRemote(data){
   if(!data||!Array.isArray(data.lists)) return;
   if((data.at||0)<=remoteAt) return;
   remoteAt=data.at;
+  const isOwnEcho=(data.at===lastPublishAt);
+  const prevItemIds=new Set();
+  const prevListIds=new Set(lists.filter(l=>!l._del).map(l=>l.id));
+  for(const l of lists) for(const it of l.items) if(!it._del) prevItemIds.add(it.id);
   const byId={};
   for(const r of data.lists) byId[r.id]=r;
   for(const l of lists){
@@ -270,6 +274,16 @@ function applyRemote(data){
   }
   lists=Object.values(byId).filter(l=>!l._del||(Date.now()-(l._delAt||0))<PURGE_MS);
   saveLocal();
+  if(!isOwnEcho){
+    const newLists=lists.filter(l=>!l._del&&!prevListIds.has(l.id));
+    let newItemCount=0;
+    for(const l of lists) for(const it of l.items) if(!it._del&&!prevItemIds.has(it.id)) newItemCount++;
+    if(newLists.length>0&&newItemCount===0){
+      toast(`「${newLists[0].name}」が追加されました`);
+    } else if(newItemCount>0){
+      toast(`${newItemCount}件の項目が追加されました`);
+    }
+  }
   if(currentListId){ renderList(); renderSuggestions(); }
   else if(currentTab==="home") renderHome();
   else renderArchive();
@@ -287,7 +301,8 @@ function loadMQTTLib(){
 }
 function mqttPublish(){
   if(!mqttClient||!mqttClient.connected) return;
-  mqttClient.publish(mqttTopic(),JSON.stringify({at:Date.now(),lists}),{retain:true,qos:1});
+  lastPublishAt=Date.now();
+  mqttClient.publish(mqttTopic(),JSON.stringify({at:lastPublishAt,lists}),{retain:true,qos:1});
 }
 async function startSync(){
   if(mqttClient) return;
