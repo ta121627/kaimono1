@@ -250,7 +250,7 @@ function urlB64ToArr(b64){
   return Uint8Array.from(raw,c=>c.charCodeAt(0));
 }
 async function initPush(){
-  if(!("serviceWorker" in navigator)||("PushManager" in window)) return;
+  if(!("serviceWorker" in navigator)) return;
   try{
     swReg=await navigator.serviceWorker.register("./sw.js");
     await navigator.serviceWorker.ready;
@@ -258,14 +258,8 @@ async function initPush(){
 }
 async function subscribePush(){
   if(!swReg) await initPush();
-  if(!swReg){
-    if(!("serviceWorker" in navigator)||("PushManager" in window)){
-      toast("iOS 16.4以上 + ホーム画面から開いてください");
-    } else {
-      toast("通知の初期化に失敗しました。再読み込みして試してください");
-    }
-    return;
-  }
+  if(!swReg){ toast("通知の初期化に失敗しました。再読み込みして試してください"); return; }
+  if(!swReg.pushManager){ toast("このブラウザはプッシュ通知に非対応です"); return; }
   if(!roomId){ toast("先に同期ルームを設定してください"); return; }
   try{
     const perm=await Notification.requestPermission();
