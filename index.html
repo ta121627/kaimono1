@@ -222,7 +222,7 @@ let currentListId = null;
 let currentTab    = "home";
 let meName  = localStorage.getItem("kaimono_me")   || "";
 let roomId  = localStorage.getItem("kaimono_room") || "";
-let WORKER_URL = localStorage.getItem("kaimono_worker") || "";
+const WORKER_URL = "https://jolly-sky-df6b.taiga1216270.workers.dev";
 const deviceId = localStorage.getItem("kaimono_device") || (()=>{ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7); localStorage.setItem("kaimono_device",id); return id; })();
 let swReg = null;
 let CLOUD   = false, mqttClient = null, remoteAt = 0, lastPublishAt = 0;
@@ -711,10 +711,7 @@ $("syncBtn").addEventListener("click",()=>{
     <div class="field"><label>ルームコード（パートナーに教える）</label><div class="roomcode">${roomId.slice(0,4)}-${roomId.slice(4)}</div></div>
     <button class="btn pink" id="copyBtn">ルームコードをコピー</button>
     <div class="gap"></div>
-    <div class="field"><label>🔔 プッシュ通知 — WorkerのURL</label>
-      <input id="workerUrlInput" value="${esc(WORKER_URL)}" placeholder="https://xxx.workers.dev"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
-    <button class="btn ghost" id="enablePushBtn">通知を有効にする</button>
+    <button class="btn ghost" id="enablePushBtn">🔔 通知を有効にする</button>
     <div class="gap"></div>
     <button class="btn red" id="stopBtn">同期を解除</button>
     <div class="gap"></div>
@@ -738,7 +735,7 @@ $("syncBtn").addEventListener("click",()=>{
   document.getElementById("createBtn")?.addEventListener("click",async()=>{
     const btn=document.getElementById("createBtn"); btn.textContent="接続中…"; btn.disabled=true;
     roomId=genRoomId(); localStorage.setItem("kaimono_room",roomId);
-    try{await startSync();closeSheet();toast("ルームを作成しました！");setTimeout(()=>$("syncBtn").click(),400);}
+    try{await startSync();closeSheet();toast("ルームを作成しました！");subscribePush();setTimeout(()=>$("syncBtn").click(),400);}
     catch(e){btn.textContent="接続失敗（ネットを確認）";btn.disabled=false;localStorage.removeItem("kaimono_room");roomId="";}
   });
   document.getElementById("joinBtn")?.addEventListener("click",async()=>{
@@ -746,7 +743,7 @@ $("syncBtn").addEventListener("click",()=>{
     if(raw.length!==8){toast("8桁のコードを入力してください");return;}
     const btn=document.getElementById("joinBtn"); btn.textContent="接続中…"; btn.disabled=true;
     roomId=raw; localStorage.setItem("kaimono_room",roomId); remoteAt=0;
-    try{await startSync();closeSheet();toast("参加しました！");}
+    try{await startSync();closeSheet();toast("参加しました！");subscribePush();}
     catch(e){btn.textContent="接続失敗（コードを確認）";btn.disabled=false;localStorage.removeItem("kaimono_room");roomId="";}
   });
   document.getElementById("copyBtn")?.addEventListener("click",()=>{
@@ -754,14 +751,7 @@ $("syncBtn").addEventListener("click",()=>{
     navigator.clipboard?.writeText(code).then(()=>toast("コードをコピーしました")).catch(()=>alert("コード: "+code));
   });
   document.getElementById("enablePushBtn")?.addEventListener("click",async()=>{
-    const inp=document.getElementById("workerUrlInput");
-    const url=(inp?.value||"").trim().replace(/\/$/,"");
-    if(url){ WORKER_URL=url; localStorage.setItem("kaimono_worker",url); }
     await subscribePush();
-  });
-  document.getElementById("workerUrlInput")?.addEventListener("input",e=>{
-    const url=e.target.value.trim().replace(/\/$/,"");
-    WORKER_URL=url; localStorage.setItem("kaimono_worker",url);
   });
   document.getElementById("stopBtn")?.addEventListener("click",()=>{
     if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){stopSync();localStorage.removeItem("kaimono_room");roomId="";closeSheet();toast("同期を解除しました");}
