@@ -251,7 +251,7 @@ function urlB64ToArr(b64){
 }
 async function initPush(){
   if(!("serviceWorker" in navigator)||!("PushManager" in window)) return;
-  try{ swReg=await navigator.serviceWorker.register("/sw.js",{scope:"/"}); }
+  try{ swReg=await navigator.serviceWorker.register("./sw.js"); }
   catch(e){ console.warn("SW登録失敗",e); }
 }
 async function subscribePush(){
