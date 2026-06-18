@@ -223,7 +223,7 @@ let currentTab    = "home";
 let meName  = localStorage.getItem("kaimono_me")   || "";
 let roomId  = localStorage.getItem("kaimono_room") || "";
 let WORKER_URL = localStorage.getItem("kaimono_worker") || "";
-const deviceId = localStorage.getItem("kaimono_device") || (()=>{ const id=newId(); localStorage.setItem("kaimono_device",id); return id; })();
+const deviceId = localStorage.getItem("kaimono_device") || (()=>{ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7); localStorage.setItem("kaimono_device",id); return id; })();
 let swReg = null;
 let CLOUD   = false, mqttClient = null, remoteAt = 0, lastPublishAt = 0;
 let suppressTap = false, sw  = null;
@@ -250,7 +250,7 @@ function urlB64ToArr(b64){
   return Uint8Array.from(raw,c=>c.charCodeAt(0));
 }
 async function initPush(){
-  if(!("serviceWorker" in navigator)||("PushManager" in window)===false) return;
+  if(!("serviceWorker" in navigator)||!("PushManager" in window)) return;
   try{ swReg=await navigator.serviceWorker.register("/sw.js",{scope:"/"}); }
   catch(e){ console.warn("SW登録失敗",e); }
 }
