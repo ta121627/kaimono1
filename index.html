@@ -251,22 +251,31 @@ function urlB64ToArr(b64){
 }
 async function initPush(){
   if(!("serviceWorker" in navigator)||("PushManager" in window)) return;
-  try{ swReg=await navigator.serviceWorker.register("./sw.js"); }
-  catch(e){ console.warn("SW登録失敗",e); }
+  try{
+    swReg=await navigator.serviceWorker.register("./sw.js");
+    await navigator.serviceWorker.ready;
+  }catch(e){ console.warn("SW登録失敗",e); }
 }
 async function subscribePush(){
-  if(!swReg){ toast("通知はこのブラウザでは使えません"); return; }
-  if(!WORKER_URL){ toast("先にWorkerのURLを設定してください"); return; }
+  if(!swReg) await initPush();
+  if(!swReg){
+    if(!("serviceWorker" in navigator)||("PushManager" in window)){
+      toast("iOS 16.4以上 + ホーム画面から開いてください");
+    } else {
+      toast("通知の初期化に失敗しました。再読み込みして試してください");
+    }
+    return;
+  }
   if(!roomId){ toast("先に同期ルームを設定してください"); return; }
   try{
-    await swReg.update();
     const perm=await Notification.requestPermission();
     if(perm!=="granted"){ toast("通知の許可が必要です"); return; }
-    const sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
+    let sub=await swReg.pushManager.getSubscription();
+    if(!sub) sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
     const res=await fetch(`${WORKER_URL}/subscribe`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,deviceId,subscription:sub.toJSON()})});
     if(res.ok) toast("プッシュ通知を有効にしました 🔔");
-    else toast("通知の登録に失敗しました（URLを確認）");
-  }catch(e){ console.warn("Push subscribe",e); toast("通知の設定に失敗しました"); }
+    else toast("通知サーバーへの登録に失敗しました（Workerを確認）");
+  }catch(e){ console.warn("Push subscribe",e); toast("エラー: "+e.message); }
 }
 function notifyPartner(body){
   if(!WORKER_URL||!roomId) return;
