@@ -257,23 +257,46 @@ async function initPush(){
   }catch(e){ console.warn("SW登録失敗",e); }
 }
 async function subscribePush(){
+  if(!roomId){ toast("先に同期ルームを設定してください"); return; }
+  if(!("serviceWorker" in navigator)||typeof Notification==="undefined"){
+    toast("このブラウザは通知に非対応です"); return;
+  }
+  // iOS は requestPermission をタップ直後に呼ぶ必要があるので最初に実行
+  let perm;
+  try{ perm=await Notification.requestPermission(); }
+  catch(e){ toast("通知の許可を取得できませんでした"); return; }
+  if(perm!=="granted"){ toast("通知が許可されていません。iPhoneの「設定」→このアプリ→通知を確認してください"); return; }
   if(!swReg) await initPush();
   if(!swReg){ toast("通知の初期化に失敗しました。再読み込みして試してください"); return; }
-  if(!swReg.pushManager){ toast("このブラウザはプッシュ通知に非対応です"); return; }
-  if(!roomId){ toast("先に同期ルームを設定してください"); return; }
+  if(!swReg.pushManager){ toast("ホーム画面に追加したアプリから開いてください"); return; }
   try{
-    const perm=await Notification.requestPermission();
-    if(perm!=="granted"){ toast("通知の許可が必要です"); return; }
     let sub=await swReg.pushManager.getSubscription();
     if(!sub) sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
     const res=await fetch(`${WORKER_URL}/subscribe`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,deviceId,subscription:sub.toJSON()})});
     if(res.ok) toast("プッシュ通知を有効にしました 🔔");
-    else toast("通知サーバーへの登録に失敗しました（Workerを確認）");
-  }catch(e){ console.warn("Push subscribe",e); toast("エラー: "+e.message); }
+    else toast("通知サーバーへの登録に失敗（"+res.status+"）");
+  }catch(e){ console.warn("Push subscribe",e); toast("購読エラー: "+e.message); }
 }
 function notifyPartner(body){
   if(!WORKER_URL||!roomId) return;
   fetch(`${WORKER_URL}/notify`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,senderDeviceId:deviceId,payload:JSON.stringify({title:"買い物チェックリスト",body})})}).catch(()=>{});
+}
+function autoResubscribe(){
+  // 既に許可済みのときだけ、新しいルーム用に購読を静かに再登録する
+  if(typeof Notification!=="undefined"&&Notification.permission==="granted") subscribePush();
+}
+async function sendTestPush(){
+  if(!roomId){ toast("先に同期ルームを設定してください"); return; }
+  toast("テスト送信中…");
+  try{
+    const res=await fetch(`${WORKER_URL}/notify`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,senderDeviceId:"__test__",payload:JSON.stringify({title:"買い物チェックリスト",body:"テスト通知です 🔔"})})});
+    let info=null; try{ info=await res.json(); }catch(_){}
+    if(!res.ok){ toast("送信失敗（HTTP "+res.status+"）"); return; }
+    if(!info){ toast("送信しました"); return; }
+    if(info.total===0){ toast("購読中の端末がありません。各端末で『通知を有効にする』を押してください"); return; }
+    if(info.sent>0) toast(`送信成功 ${info.sent}/${info.total} 件`);
+    else toast(`送信失敗 ${info.failed}件（${info.lastErr||"不明"}）`);
+  }catch(e){ toast("送信エラー: "+e.message); }
 }
 
 /* ローカル保存 */
@@ -716,6 +739,8 @@ $("syncBtn").addEventListener("click",()=>{
     <div class="gap"></div>
     <button class="btn ghost" id="enablePushBtn">🔔 通知を有効にする</button>
     <div class="gap"></div>
+    <button class="btn ghost" id="testPushBtn">📨 通知をテスト送信</button>
+    <div class="gap"></div>
     <button class="btn red" id="stopBtn">同期を解除</button>
     <div class="gap"></div>
     <button class="btn sub" data-act="close">閉じる</button>
@@ -738,7 +763,7 @@ $("syncBtn").addEventListener("click",()=>{
   document.getElementById("createBtn")?.addEventListener("click",async()=>{
     const btn=document.getElementById("createBtn"); btn.textContent="接続中…"; btn.disabled=true;
     roomId=genRoomId(); localStorage.setItem("kaimono_room",roomId);
-    try{await startSync();closeSheet();toast("ルームを作成しました！");subscribePush();setTimeout(()=>$("syncBtn").click(),400);}
+    try{await startSync();closeSheet();toast("ルームを作成しました！");autoResubscribe();setTimeout(()=>$("syncBtn").click(),400);}
     catch(e){btn.textContent="接続失敗（ネットを確認）";btn.disabled=false;localStorage.removeItem("kaimono_room");roomId="";}
   });
   document.getElementById("joinBtn")?.addEventListener("click",async()=>{
@@ -746,7 +771,7 @@ $("syncBtn").addEventListener("click",()=>{
     if(raw.length!==8){toast("8桁のコードを入力してください");return;}
     const btn=document.getElementById("joinBtn"); btn.textContent="接続中…"; btn.disabled=true;
     roomId=raw; localStorage.setItem("kaimono_room",roomId); remoteAt=0;
-    try{await startSync();closeSheet();toast("参加しました！");subscribePush();}
+    try{await startSync();closeSheet();toast("参加しました！");autoResubscribe();}
     catch(e){btn.textContent="接続失敗（コードを確認）";btn.disabled=false;localStorage.removeItem("kaimono_room");roomId="";}
   });
   document.getElementById("copyBtn")?.addEventListener("click",()=>{
@@ -755,6 +780,9 @@ $("syncBtn").addEventListener("click",()=>{
   });
   document.getElementById("enablePushBtn")?.addEventListener("click",async()=>{
     await subscribePush();
+  });
+  document.getElementById("testPushBtn")?.addEventListener("click",async()=>{
+    await sendTestPush();
   });
   document.getElementById("stopBtn")?.addEventListener("click",()=>{
     if(confirm("同期を解除します。このデバイスのデータはそのまま残ります。")){stopSync();localStorage.removeItem("kaimono_room");roomId="";closeSheet();toast("同期を解除しました");}

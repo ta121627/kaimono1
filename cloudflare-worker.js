@@ -43,18 +43,26 @@ export default {
       const list = await env.PUSH_SUBS.list({ prefix });
       const vapidJwk = JSON.parse(env.VAPID_JWK);
 
+      let total = 0, sent = 0, failed = 0, lastErr = '';
       await Promise.all(list.keys.map(async ({ name }) => {
         if (name.slice(prefix.length) === senderDeviceId) return;
         const raw = await env.PUSH_SUBS.get(name);
         if (!raw) return;
+        total++;
         try {
           await sendWebPush(JSON.parse(raw), payload, vapidJwk, env.VAPID_PUBLIC_KEY);
+          sent++;
         } catch (e) {
+          failed++;
+          lastErr = String(e.status || e.message || e);
           if (e.status === 410 || e.status === 404) await env.PUSH_SUBS.delete(name);
         }
       }));
 
-      return new Response('ok', { headers: cors });
+      return new Response(
+        JSON.stringify({ total, sent, failed, lastErr }),
+        { headers: { ...cors, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response('Not Found', { status: 404, headers: cors });
