@@ -114,6 +114,7 @@ body.on-list{overflow:hidden;}
 #listScreen #suggestBar{flex:0 0 auto;}
 #listScreen .list-wrap{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px;}
 #listScreen .addbar{position:static;flex:0 0 auto;}
+#listScreen.kb-open .addbar{padding-bottom:8px;}
 
 /* よく買うもの候補 */
 .suggest-bar{padding:0 16px 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
@@ -475,6 +476,7 @@ function renderList(opts={}){
       }
     });
     if(opts.toggledId){const chk=listEl.querySelector(`.cell[data-id="${opts.toggledId}"] .check`);if(chk){chk.classList.add("pop");setTimeout(()=>chk.classList.remove("pop"),380);}}
+    if(opts.enterId){const lw=document.querySelector(".list-wrap");if(lw) lw.scrollTop=lw.scrollHeight;} // 追加時は最下部までスクロール
   });
 }
 
@@ -680,6 +682,7 @@ function setListVH(){
   const h=vv?vv.height:window.innerHeight;
   ls.style.height=h+"px";
   ls.style.top=(vv?vv.offsetTop:0)+"px";
+  ls.classList.toggle("kb-open",(window.innerHeight-h)>100); // キーボード表示中は下余白を詰める
 }
 if(window.visualViewport){
   window.visualViewport.addEventListener("resize",setListVH);
