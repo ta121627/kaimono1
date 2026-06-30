@@ -2,25 +2,39 @@
  * 買い物チェックリスト — Cloudflare Worker
  *
  * 必要な設定:
- *   KV 名前空間  : PUSH_SUBS  (binding name)
- *   Secret       : VAPID_JWK  (秘密鍵 JSON 文字列)
- *   Variable     : VAPID_PUBLIC_KEY (公開鍵 base64url)
+ *   KV 名前空間  : PUSH_SUBS  (binding name) ← これだけ
+ *   ※ VAPIDキーはこのコードに直接埋め込み済み。Cloudflareの変数・Secret設定は不要。
  *
  * エンドポイント:
+ *   GET  /key        — VAPID公開鍵を返す（アプリが取得して購読に使う）
  *   POST /subscribe  — プッシュ購読を登録
  *   POST /notify     — ルーム内の他端末に通知を送信
  */
+
+// ── VAPIDキー（公開鍵と秘密鍵は同一ペア。手作業コピー不要・不一致なし） ──
+const VAPID_PUBLIC_KEY = "BEujRUBxUzOeWUuya7d3HSmpTOfbchabRGdeB-vQiSSdCwvsRI5Y6WQTD6e6iaqyT7B1505QZBw_GfhmpoCu3Ws";
+const VAPID_JWK = {
+  kty: "EC", crv: "P-256",
+  x: "S6NFQHFTM55ZS7Jrt3cdKalM59tyFptEZ14H69CJJJ0",
+  y: "CwvsRI5Y6WQTD6e6iaqyT7B1505QZBw_GfhmpoCu3Ws",
+  d: "fhar1FMFep7L5WDABAyC4McUyI3WH5SRBZXXR5F9ZXk",
+};
+const VAPID_SUB = "mailto:taiga1216270@icloud.com";
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const cors = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    if (request.method === 'GET' && url.pathname === '/key') {
+      return new Response(VAPID_PUBLIC_KEY, { headers: { ...cors, 'Content-Type': 'text/plain' } });
+    }
 
     if (request.method === 'POST' && url.pathname === '/subscribe') {
       const { roomId, deviceId, subscription } = await request.json();
@@ -41,7 +55,6 @@ export default {
 
       const prefix = `${roomId}:`;
       const list = await env.PUSH_SUBS.list({ prefix });
-      const vapidJwk = JSON.parse(env.VAPID_JWK);
 
       let total = 0, sent = 0, failed = 0, lastErr = '';
       await Promise.all(list.keys.map(async ({ name }) => {
@@ -50,7 +63,7 @@ export default {
         if (!raw) return;
         total++;
         try {
-          await sendWebPush(JSON.parse(raw), payload, vapidJwk, env.VAPID_PUBLIC_KEY);
+          await sendWebPush(JSON.parse(raw), payload, VAPID_JWK, VAPID_PUBLIC_KEY);
           sent++;
         } catch (e) {
           failed++;
@@ -125,7 +138,7 @@ async function sendWebPush(sub, payloadStr, vapidJwk, vapidPubKey) {
       'Content-Encoding': 'aes128gcm',
       'TTL': '86400',
       'Urgency': 'high',
-      'Authorization': `vapid t=${token},k=${vapidPubKey}`,
+      'Authorization': `vapid t=${token}, k=${vapidPubKey}`,
     },
     body,
   });
@@ -164,7 +177,7 @@ async function vapidJwt(jwk, audience) {
   const pay = b64uEnc(new TextEncoder().encode(JSON.stringify({
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + 43200,
-    sub: 'mailto:push@kaimono-app.example',
+    sub: VAPID_SUB,
   })));
   const unsigned = `${hdr}.${pay}`;
   const key = await crypto.subtle.importKey(
