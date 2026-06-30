@@ -215,7 +215,7 @@ body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const ICONS   = ["🛒","📝","🏠","🎁","💊","🍱","🧹","📦","🌸","💄","🍳","🐶"];
 const PURGE_MS = 30*24*60*60*1000; // 削除済みリストは30日間ゴミ箱から復元可能
-const VAPID_PUBLIC_KEY = "BGGyY5DlAifWPx5W3n7Q7hgcp2GKoQaCZavhUqitlyKqxcTWN0aoPdziKs_gZ06tPydyZXIWSbJNu05QuFJWg1k";
+const VAPID_PUBLIC_KEY = "BEujRUBxUzOeWUuya7d3HSmpTOfbchabRGdeB-vQiSSdCwvsRI5Y6WQTD6e6iaqyT7B1505QZBw_GfhmpoCu3Ws";
 
 let lists         = [];
 let currentListId = null;
@@ -271,7 +271,8 @@ async function subscribePush(){
   if(!swReg.pushManager){ toast("ホーム画面に追加したアプリから開いてください"); return; }
   try{
     let sub=await swReg.pushManager.getSubscription();
-    if(!sub) sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
+    if(sub){ try{ await sub.unsubscribe(); }catch(_){ } sub=null; } // 古い鍵の購読を破棄して作り直す
+    sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToArr(VAPID_PUBLIC_KEY)});
     const res=await fetch(`${WORKER_URL}/subscribe`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId,deviceId,subscription:sub.toJSON()})});
     if(res.ok) toast("プッシュ通知を有効にしました 🔔");
     else toast("通知サーバーへの登録に失敗（"+res.status+"）");
