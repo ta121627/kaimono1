@@ -682,8 +682,10 @@ function setListVH(){
   const h=vv?vv.height:window.innerHeight;
   ls.style.height=h+"px";
   ls.style.top=(vv?vv.offsetTop:0)+"px";
-  ls.classList.toggle("kb-open",(window.innerHeight-h)>100); // キーボード表示中は下余白を詰める
 }
+// 入力欄をタップしている間は下の安全領域余白を詰めてキーボードに密着させる
+$("inp").addEventListener("focus",()=>{ $("listScreen").classList.add("kb-open"); setTimeout(setListVH,100); setTimeout(setListVH,350); });
+$("inp").addEventListener("blur",()=>{ $("listScreen").classList.remove("kb-open"); setTimeout(setListVH,100); });
 if(window.visualViewport){
   window.visualViewport.addEventListener("resize",setListVH);
   window.visualViewport.addEventListener("scroll",setListVH);
