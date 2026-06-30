@@ -74,7 +74,7 @@ input,button{font-family:inherit;}button{cursor:pointer;}
 .tab-label{font-size:10px;font-weight:600;letter-spacing:.2px;}
 
 /* リスト画面 */
-body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
+body.on-list{overflow:hidden;}
 .list-wrap{padding:6px 16px 0;}
 .card{background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.02),0 10px 30px rgba(255,59,129,.06);}
 .cell{position:relative;background:#FFFFFF;}
@@ -105,6 +105,15 @@ body.on-list{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
 .addbar input::placeholder{color:#C9B8C0;}
 .plus{width:46px;height:46px;flex:0 0 auto;border:none;border-radius:50%;background:#FF3B81;color:#fff;font-size:26px;line-height:46px;font-weight:300;box-shadow:0 4px 14px rgba(255,59,129,.45);transition:transform .12s,background .12s;}
 .plus:active{transform:scale(.92);background:#E62E70;}
+
+/* リスト画面：可視領域に固定したflexレイアウト（リストだけスクロール／入力バーは常にキーボード直上に固定） */
+#listScreen{position:fixed;left:0;right:0;top:0;height:100%;display:flex;flex-direction:column;overflow:hidden;}
+#listScreen.off{display:none;}
+#listScreen .navbar{position:relative;flex:0 0 auto;}
+#listScreen .hero{flex:0 0 auto;}
+#listScreen #suggestBar{flex:0 0 auto;}
+#listScreen .list-wrap{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px;}
+#listScreen .addbar{position:static;flex:0 0 auto;}
 
 /* よく買うもの候補 */
 .suggest-bar{padding:0 16px 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
@@ -550,6 +559,7 @@ function openList(id){
   $("homeScreen").classList.add("off");
   $("listScreen").classList.remove("off");
   document.body.classList.add("on-list");
+  setListVH();
   window.scrollTo(0,0); renderList(); renderSuggestions();
 }
 function goHome(){
@@ -662,21 +672,21 @@ $("addBtn").addEventListener("click",quickAdd);
 $("inp").addEventListener("keydown",e=>{if(e.key==="Enter")quickAdd();});
 window.addEventListener("scroll",()=>{$("homeNav").classList.toggle("scrolled",window.scrollY>30);$("listNav").classList.toggle("scrolled",window.scrollY>30);},{passive:true});
 
-/* iOSキーボード対応：入力バーをキーボードのすぐ上に固定し、リストが隠れないようにする */
-let kbActive=false;
-function dockAddBar(){
-  const ab=document.querySelector(".addbar");
-  if(!ab||!window.visualViewport) return;
-  const gap=window.innerHeight-(window.visualViewport.height+window.visualViewport.offsetTop);
-  if(kbActive&&gap>20){ ab.style.transform=`translateY(${-gap}px)`; }
-  else{ ab.style.transform=""; }
+/* iOSキーボード対応：リスト画面を可視領域の高さに合わせる（入力バーは常にキーボード直上に固定） */
+function setListVH(){
+  const ls=$("listScreen");
+  if(!ls||ls.classList.contains("off")) return;
+  const vv=window.visualViewport;
+  const h=vv?vv.height:window.innerHeight;
+  ls.style.height=h+"px";
+  ls.style.top=(vv?vv.offsetTop:0)+"px";
 }
 if(window.visualViewport){
-  window.visualViewport.addEventListener("resize",dockAddBar);
-  window.visualViewport.addEventListener("scroll",dockAddBar);
+  window.visualViewport.addEventListener("resize",setListVH);
+  window.visualViewport.addEventListener("scroll",setListVH);
 }
-$("inp").addEventListener("focus",()=>{ kbActive=true; setTimeout(()=>{ window.scrollTo(0,0); dockAddBar(); },50); setTimeout(()=>{ window.scrollTo(0,0); dockAddBar(); },300); });
-$("inp").addEventListener("blur",()=>{ kbActive=false; const ab=document.querySelector(".addbar"); if(ab) ab.style.transform=""; });
+window.addEventListener("resize",setListVH);
+window.addEventListener("orientationchange",()=>setTimeout(setListVH,200));
 
 /* シート */
 function syncOverlayHeight(){
