@@ -661,6 +661,22 @@ $("addBtn").addEventListener("click",quickAdd);
 $("inp").addEventListener("keydown",e=>{if(e.key==="Enter")quickAdd();});
 window.addEventListener("scroll",()=>{$("homeNav").classList.toggle("scrolled",window.scrollY>30);$("listNav").classList.toggle("scrolled",window.scrollY>30);},{passive:true});
 
+/* iOSキーボード対応：入力バーをキーボードのすぐ上に固定し、リストが隠れないようにする */
+let kbActive=false;
+function dockAddBar(){
+  const ab=document.querySelector(".addbar");
+  if(!ab||!window.visualViewport) return;
+  const gap=window.innerHeight-(window.visualViewport.height+window.visualViewport.offsetTop);
+  if(kbActive&&gap>20){ ab.style.transform=`translateY(${-gap}px)`; }
+  else{ ab.style.transform=""; }
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",dockAddBar);
+  window.visualViewport.addEventListener("scroll",dockAddBar);
+}
+$("inp").addEventListener("focus",()=>{ kbActive=true; setTimeout(()=>{ window.scrollTo(0,0); dockAddBar(); },50); setTimeout(()=>{ window.scrollTo(0,0); dockAddBar(); },300); });
+$("inp").addEventListener("blur",()=>{ kbActive=false; const ab=document.querySelector(".addbar"); if(ab) ab.style.transform=""; });
+
 /* シート */
 function syncOverlayHeight(){
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
